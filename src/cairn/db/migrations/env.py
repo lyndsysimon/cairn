@@ -1,8 +1,18 @@
+import os
 from logging.config import fileConfig
 
 from alembic import context
 
 config = context.config
+
+# Allow overriding the database URL via environment variable
+database_url = os.environ.get("CAIRN_DATABASE_URL")
+if database_url:
+    # Ensure the URL uses the psycopg3 driver for SQLAlchemy
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    config.set_main_option("sqlalchemy.url", database_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

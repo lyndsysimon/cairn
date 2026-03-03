@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from cairn.models.agent import AgentDefinition, AgentStatus
 
@@ -13,6 +14,7 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
     now = datetime.now(UTC)
     agent = agent.model_copy(update={"created_at": now, "updated_at": now})
 
+    dumped = agent.model_dump()
     await conn.execute(
         """
         INSERT INTO agents (
@@ -34,11 +36,11 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "model_provider": agent.model_provider,
             "model_name": agent.model_name,
             "system_prompt": agent.system_prompt,
-            "input_schema": agent.model_dump()["input_schema"],
-            "output_schema": agent.model_dump()["output_schema"],
-            "trigger_config": agent.model_dump()["trigger"],
-            "runtime_config": agent.model_dump()["runtime"],
-            "credentials": agent.model_dump()["credentials"],
+            "input_schema": Jsonb(dumped["input_schema"]),
+            "output_schema": Jsonb(dumped["output_schema"]),
+            "trigger_config": Jsonb(dumped["trigger"]),
+            "runtime_config": Jsonb(dumped["runtime"]),
+            "credentials": Jsonb(dumped["credentials"]),
             "status": agent.status.value,
             "created_at": agent.created_at,
             "updated_at": agent.updated_at,
@@ -48,12 +50,12 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
 
 
 async def get_by_id(conn: AsyncConnection, agent_id: UUID) -> AgentDefinition | None:
-    cur = await conn.execute(
-        "SELECT * FROM agents WHERE id = %s",
-        (str(agent_id),),
-        row_factory=dict_row,
-    )
-    row = await cur.fetchone()
+    async with conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(
+            "SELECT * FROM agents WHERE id = %s",
+            (str(agent_id),),
+        )
+        row = await cur.fetchone()
     if row is None:
         return None
     return _row_to_agent(row)
@@ -65,19 +67,19 @@ async def list_all(
     limit: int = 50,
     offset: int = 0,
 ) -> list[AgentDefinition]:
-    if status is not None:
-        cur = await conn.execute(
-            "SELECT * FROM agents WHERE status = %s ORDER BY created_at DESC LIMIT %s OFFSET %s",
-            (status.value, limit, offset),
-            row_factory=dict_row,
-        )
-    else:
-        cur = await conn.execute(
-            "SELECT * FROM agents ORDER BY created_at DESC LIMIT %s OFFSET %s",
-            (limit, offset),
-            row_factory=dict_row,
-        )
-    rows = await cur.fetchall()
+    async with conn.cursor(row_factory=dict_row) as cur:
+        if status is not None:
+            await cur.execute(
+                "SELECT * FROM agents WHERE status = %s"
+                " ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                (status.value, limit, offset),
+            )
+        else:
+            await cur.execute(
+                "SELECT * FROM agents ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                (limit, offset),
+            )
+        rows = await cur.fetchall()
     return [_row_to_agent(row) for row in rows]
 
 
@@ -85,6 +87,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
     now = datetime.now(UTC)
     agent = agent.model_copy(update={"updated_at": now})
 
+    dumped = agent.model_dump()
     await conn.execute(
         """
         UPDATE agents SET
@@ -109,11 +112,11 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "model_provider": agent.model_provider,
             "model_name": agent.model_name,
             "system_prompt": agent.system_prompt,
-            "input_schema": agent.model_dump()["input_schema"],
-            "output_schema": agent.model_dump()["output_schema"],
-            "trigger_config": agent.model_dump()["trigger"],
-            "runtime_config": agent.model_dump()["runtime"],
-            "credentials": agent.model_dump()["credentials"],
+            "input_schema": Jsonb(dumped["input_schema"]),
+            "output_schema": Jsonb(dumped["output_schema"]),
+            "trigger_config": Jsonb(dumped["trigger"]),
+            "runtime_config": Jsonb(dumped["runtime"]),
+            "credentials": Jsonb(dumped["credentials"]),
             "status": agent.status.value,
             "updated_at": agent.updated_at,
         },
