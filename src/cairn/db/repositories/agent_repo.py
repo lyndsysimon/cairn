@@ -1,0 +1,148 @@
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
+
+from psycopg import AsyncConnection
+from psycopg.rows import dict_row
+
+from cairn.models.agent import AgentDefinition, AgentStatus
+
+
+async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefinition:
+    if agent.id is None:
+        agent = agent.model_copy(update={"id": uuid4()})
+    now = datetime.now(UTC)
+    agent = agent.model_copy(update={"created_at": now, "updated_at": now})
+
+    await conn.execute(
+        """
+        INSERT INTO agents (
+            id, name, description, model_provider, model_name,
+            system_prompt, input_schema, output_schema,
+            trigger_config, runtime_config, credentials, status,
+            created_at, updated_at
+        ) VALUES (
+            %(id)s, %(name)s, %(description)s, %(model_provider)s, %(model_name)s,
+            %(system_prompt)s, %(input_schema)s, %(output_schema)s,
+            %(trigger_config)s, %(runtime_config)s, %(credentials)s, %(status)s,
+            %(created_at)s, %(updated_at)s
+        )
+        """,
+        {
+            "id": str(agent.id),
+            "name": agent.name,
+            "description": agent.description,
+            "model_provider": agent.model_provider,
+            "model_name": agent.model_name,
+            "system_prompt": agent.system_prompt,
+            "input_schema": agent.model_dump()["input_schema"],
+            "output_schema": agent.model_dump()["output_schema"],
+            "trigger_config": agent.model_dump()["trigger"],
+            "runtime_config": agent.model_dump()["runtime"],
+            "credentials": agent.model_dump()["credentials"],
+            "status": agent.status.value,
+            "created_at": agent.created_at,
+            "updated_at": agent.updated_at,
+        },
+    )
+    return agent
+
+
+async def get_by_id(conn: AsyncConnection, agent_id: UUID) -> AgentDefinition | None:
+    cur = await conn.execute(
+        "SELECT * FROM agents WHERE id = %s",
+        (str(agent_id),),
+        row_factory=dict_row,
+    )
+    row = await cur.fetchone()
+    if row is None:
+        return None
+    return _row_to_agent(row)
+
+
+async def list_all(
+    conn: AsyncConnection,
+    status: AgentStatus | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[AgentDefinition]:
+    if status is not None:
+        cur = await conn.execute(
+            "SELECT * FROM agents WHERE status = %s ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (status.value, limit, offset),
+            row_factory=dict_row,
+        )
+    else:
+        cur = await conn.execute(
+            "SELECT * FROM agents ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (limit, offset),
+            row_factory=dict_row,
+        )
+    rows = await cur.fetchall()
+    return [_row_to_agent(row) for row in rows]
+
+
+async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefinition:
+    now = datetime.now(UTC)
+    agent = agent.model_copy(update={"updated_at": now})
+
+    await conn.execute(
+        """
+        UPDATE agents SET
+            name = %(name)s,
+            description = %(description)s,
+            model_provider = %(model_provider)s,
+            model_name = %(model_name)s,
+            system_prompt = %(system_prompt)s,
+            input_schema = %(input_schema)s,
+            output_schema = %(output_schema)s,
+            trigger_config = %(trigger_config)s,
+            runtime_config = %(runtime_config)s,
+            credentials = %(credentials)s,
+            status = %(status)s,
+            updated_at = %(updated_at)s
+        WHERE id = %(id)s
+        """,
+        {
+            "id": str(agent.id),
+            "name": agent.name,
+            "description": agent.description,
+            "model_provider": agent.model_provider,
+            "model_name": agent.model_name,
+            "system_prompt": agent.system_prompt,
+            "input_schema": agent.model_dump()["input_schema"],
+            "output_schema": agent.model_dump()["output_schema"],
+            "trigger_config": agent.model_dump()["trigger"],
+            "runtime_config": agent.model_dump()["runtime"],
+            "credentials": agent.model_dump()["credentials"],
+            "status": agent.status.value,
+            "updated_at": agent.updated_at,
+        },
+    )
+    return agent
+
+
+async def delete(conn: AsyncConnection, agent_id: UUID) -> bool:
+    cur = await conn.execute(
+        "DELETE FROM agents WHERE id = %s",
+        (str(agent_id),),
+    )
+    return cur.rowcount > 0
+
+
+def _row_to_agent(row: dict) -> AgentDefinition:
+    return AgentDefinition(
+        id=row["id"],
+        name=row["name"],
+        description=row["description"],
+        model_provider=row["model_provider"],
+        model_name=row["model_name"],
+        system_prompt=row["system_prompt"],
+        input_schema=row["input_schema"],
+        output_schema=row["output_schema"],
+        trigger=row["trigger_config"],
+        runtime=row["runtime_config"],
+        credentials=row["credentials"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
