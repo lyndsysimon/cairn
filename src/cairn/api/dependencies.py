@@ -2,6 +2,8 @@ from collections.abc import AsyncGenerator
 
 from psycopg import AsyncConnection
 
+from cairn.config import settings
+from cairn.credentials.postgres import PostgresCredentialStore
 from cairn.db.connection import get_pool
 from cairn.execution.service import ExecutionService
 from cairn.runtime.docker import DockerRuntimeProvider
@@ -17,4 +19,9 @@ async def get_db_connection() -> AsyncGenerator[AsyncConnection]:
 def get_execution_service() -> ExecutionService:
     runtime = DockerRuntimeProvider()
     security = PassthroughInspector()
-    return ExecutionService(runtime=runtime, security=security)
+    credential_store = None
+    if settings.encryption_key:
+        credential_store = PostgresCredentialStore(get_pool(), settings.encryption_key)
+    return ExecutionService(
+        runtime=runtime, security=security, credential_store=credential_store
+    )
