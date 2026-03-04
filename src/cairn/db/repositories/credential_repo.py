@@ -4,6 +4,14 @@ from uuid import UUID, uuid4
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
 
+from cairn.config import settings
+from cairn.credentials.encryption import derive_key, encrypt_value
+
+
+def _get_key() -> bytes:
+    """Derive the Fernet key from the configured encryption passphrase."""
+    return derive_key(settings.encryption_key)
+
 
 async def create(
     conn: AsyncConnection,
@@ -13,6 +21,7 @@ async def create(
 ) -> dict:
     row_id = uuid4()
     now = datetime.now(UTC)
+    encrypted = encrypt_value(value, _get_key())
     await conn.execute(
         """
         INSERT INTO credentials (
@@ -26,7 +35,7 @@ async def create(
         {
             "id": str(row_id),
             "credential_id": credential_id,
-            "encrypted_value": value.encode("utf-8"),
+            "encrypted_value": encrypted,
             "store_name": store_name,
             "created_at": now,
             "updated_at": now,
@@ -87,6 +96,7 @@ async def list_all(
 
 async def update_value(conn: AsyncConnection, row_id: UUID, value: str) -> bool:
     now = datetime.now(UTC)
+    encrypted = encrypt_value(value, _get_key())
     cur = await conn.execute(
         "UPDATE credentials"
         " SET encrypted_value = %(value)s,"
@@ -94,7 +104,7 @@ async def update_value(conn: AsyncConnection, row_id: UUID, value: str) -> bool:
         " WHERE id = %(id)s",
         {
             "id": str(row_id),
-            "value": value.encode("utf-8"),
+            "value": encrypted,
             "updated_at": now,
         },
     )
