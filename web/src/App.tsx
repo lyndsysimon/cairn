@@ -1,8 +1,19 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { AgentListPage } from "./pages/AgentListPage";
+import { CreateAgentPage } from "./pages/CreateAgentPage";
+import { AgentDetailPage } from "./pages/AgentDetailPage";
+
 export function App() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
-      <h1>Cairn</h1>
-      <p>Agent Orchestration Platform</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<AgentListPage />} />
+          <Route path="agents/new" element={<CreateAgentPage />} />
+          <Route path="agents/:id" element={<AgentDetailPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
