@@ -222,6 +222,11 @@ body {
   color: var(--color-error);
 }
 
+.status-running {
+  background: #dbeafe;
+  color: var(--color-primary);
+}
+
 /* Forms */
 .form {
   display: flex;
@@ -338,6 +343,12 @@ pre.detail-code {
   font-size: 0.8125rem;
   overflow-x: auto;
   white-space: pre-wrap;
+}
+
+pre.detail-code-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--color-danger);
 }
 
 /* Empty state */
