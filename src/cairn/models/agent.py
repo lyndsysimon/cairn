@@ -30,6 +30,7 @@ class AgentDefinition(BaseModel):
     trigger: TriggerConfig
     runtime: RuntimeConfig
     credentials: list[CredentialReference] = Field(default_factory=list)
+    security_middlewares: list[str] = Field(default_factory=list)
 
     status: AgentStatus = AgentStatus.ACTIVE
     created_at: datetime = Field(default_factory=datetime.utcnow)

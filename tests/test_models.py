@@ -65,6 +65,32 @@ def test_agent_definition_json_roundtrip(sample_agent: AgentDefinition):
     assert restored.trigger.type == sample_agent.trigger.type
 
 
+def test_agent_definition_security_middlewares():
+    agent = AgentDefinition(
+        name="mw-agent",
+        model_provider="anthropic",
+        model_name="claude-sonnet-4-20250514",
+        input_schema={"type": "object"},
+        output_schema={"type": "object"},
+        trigger=ManualTrigger(),
+        runtime=RuntimeConfig(type=RuntimeType.DOCKER, image="python:3.13-slim"),
+        security_middlewares=["credential_leak_detector"],
+    )
+    assert agent.security_middlewares == ["credential_leak_detector"]
+
+    # Default should be empty list
+    agent2 = AgentDefinition(
+        name="no-mw-agent",
+        model_provider="anthropic",
+        model_name="claude-sonnet-4-20250514",
+        input_schema={"type": "object"},
+        output_schema={"type": "object"},
+        trigger=ManualTrigger(),
+        runtime=RuntimeConfig(type=RuntimeType.DOCKER, image="python:3.13-slim"),
+    )
+    assert agent2.security_middlewares == []
+
+
 def test_agent_run():
     import uuid
 

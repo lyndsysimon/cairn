@@ -53,9 +53,7 @@ class TestGetCredential:
     @pytest.mark.asyncio
     async def test_returns_decrypted_value(self, encryption_key, fernet_key):
         encrypted = encrypt_value("my-api-key", fernet_key)
-        pool, conn, cursor = _make_pool(
-            rows=[{"encrypted_value": encrypted}]
-        )
+        pool, conn, cursor = _make_pool(rows=[{"encrypted_value": encrypted}])
         store = PostgresCredentialStore(pool, encryption_key)
         ref = CredentialReference(
             credential_id="api-key",
