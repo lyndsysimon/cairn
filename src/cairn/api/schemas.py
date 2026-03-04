@@ -95,3 +95,53 @@ class ProviderResponse(BaseModel):
 class ProviderListResponse(BaseModel):
     providers: list[ProviderResponse]
     total: int
+
+
+# --- Credential schemas ---
+
+
+class CreateCredentialRequest(BaseModel):
+    credential_id: str = Field(min_length=1, max_length=255)
+    store_name: str = "postgres"
+    value: str = Field(min_length=1)
+
+
+class UpdateCredentialRequest(BaseModel):
+    value: str = Field(min_length=1)
+
+
+class CredentialResponse(BaseModel):
+    id: UUID
+    credential_id: str
+    store_name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class CredentialListResponse(BaseModel):
+    credentials: list[CredentialResponse]
+    total: int
+
+
+# --- Agent Run schemas ---
+
+
+class CreateRunRequest(BaseModel):
+    input_data: dict | None = None
+
+
+class RunResponse(BaseModel):
+    id: UUID
+    agent_id: UUID
+    status: str
+    input_data: dict | None
+    output_data: dict | None
+    error_message: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    created_at: datetime
+
+
+class RunListResponse(BaseModel):
+    runs: list[RunResponse]
+    total: int

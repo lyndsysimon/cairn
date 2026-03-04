@@ -1,11 +1,18 @@
 import type {
   Agent,
   AgentListResponse,
+  AgentRun,
   CreateAgentRequest,
+  CreateCredentialRequest,
   CreateProviderRequest,
+  CreateRunRequest,
+  Credential,
+  CredentialListResponse,
   ModelProvider,
   ProviderListResponse,
+  RunListResponse,
   UpdateAgentRequest,
+  UpdateCredentialRequest,
   UpdateProviderRequest,
 } from "./types";
 
@@ -90,4 +97,60 @@ export function updateProvider(
 
 export function deleteProvider(id: string): Promise<void> {
   return request(`/providers/${id}`, { method: "DELETE" });
+}
+
+// --- Credentials ---
+
+export function listCredentials(
+  storeName?: string,
+): Promise<CredentialListResponse> {
+  const params = storeName ? `?store_name=${encodeURIComponent(storeName)}` : "";
+  return request(`/credentials${params}`);
+}
+
+export function getCredential(id: string): Promise<Credential> {
+  return request(`/credentials/${id}`);
+}
+
+export function createCredential(
+  data: CreateCredentialRequest,
+): Promise<Credential> {
+  return request("/credentials", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateCredential(
+  id: string,
+  data: UpdateCredentialRequest,
+): Promise<Credential> {
+  return request(`/credentials/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteCredential(id: string): Promise<void> {
+  return request(`/credentials/${id}`, { method: "DELETE" });
+}
+
+// --- Agent Runs ---
+
+export function listRuns(agentId: string): Promise<RunListResponse> {
+  return request(`/agents/${agentId}/runs`);
+}
+
+export function getRun(runId: string): Promise<AgentRun> {
+  return request(`/runs/${runId}`);
+}
+
+export function createRun(
+  agentId: string,
+  data: CreateRunRequest,
+): Promise<AgentRun> {
+  return request(`/agents/${agentId}/runs`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }

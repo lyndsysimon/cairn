@@ -131,3 +131,58 @@ export interface UpdateProviderRequest {
   models?: ModelConfig[];
   is_enabled?: boolean;
 }
+
+// --- Credential types ---
+
+export interface Credential {
+  id: string;
+  credential_id: string;
+  store_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CredentialListResponse {
+  credentials: Credential[];
+  total: number;
+}
+
+export interface CreateCredentialRequest {
+  credential_id: string;
+  store_name?: string;
+  value: string;
+}
+
+export interface UpdateCredentialRequest {
+  value: string;
+}
+
+// --- Agent Run types ---
+
+export type RunStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface AgentRun {
+  id: string;
+  agent_id: string;
+  status: RunStatus;
+  input_data: Record<string, unknown> | null;
+  output_data: Record<string, unknown> | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface RunListResponse {
+  runs: AgentRun[];
+  total: number;
+}
+
+export interface CreateRunRequest {
+  input_data?: Record<string, unknown> | null;
+}

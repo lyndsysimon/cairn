@@ -25,6 +25,14 @@ export function Layout() {
           >
             Model Providers
           </NavLink>
+          <NavLink
+            to="/credentials"
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+          >
+            Credentials
+          </NavLink>
         </nav>
       </aside>
       <main className="main">

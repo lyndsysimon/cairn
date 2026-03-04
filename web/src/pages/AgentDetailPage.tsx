@@ -1,8 +1,29 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getAgent, updateAgent, deleteAgent } from "../api/client";
-import type { Agent, AgentStatus } from "../api/types";
+import {
+  getAgent,
+  updateAgent,
+  deleteAgent,
+  listRuns,
+  createRun,
+} from "../api/client";
+import type { Agent, AgentRun, AgentStatus } from "../api/types";
 import { StatusBadge } from "../components/StatusBadge";
+
+function RunStatusBadge({ status }: { status: string }) {
+  const classMap: Record<string, string> = {
+    completed: "status-active",
+    running: "status-running",
+    pending: "status-inactive",
+    failed: "status-error",
+    cancelled: "status-inactive",
+  };
+  return (
+    <span className={`status ${classMap[status] ?? "status-inactive"}`}>
+      {status}
+    </span>
+  );
+}
 
 export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +36,12 @@ export function AgentDetailPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editSystemPrompt, setEditSystemPrompt] = useState("");
   const [editStatus, setEditStatus] = useState<AgentStatus>("active");
+
+  const [runs, setRuns] = useState<AgentRun[]>([]);
+  const [runsLoading, setRunsLoading] = useState(false);
+  const [triggering, setTriggering] = useState(false);
+  const [showRunInput, setShowRunInput] = useState(false);
+  const [runInput, setRunInput] = useState("{}");
 
   useEffect(() => {
     if (!id) return;
@@ -29,7 +56,36 @@ export function AgentDetailPage() {
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
+
+    loadRuns(id);
   }, [id]);
+
+  function loadRuns(agentId: string) {
+    setRunsLoading(true);
+    listRuns(agentId)
+      .then((data) => setRuns(data.runs))
+      .catch(() => {})
+      .finally(() => setRunsLoading(false));
+  }
+
+  async function handleTriggerRun() {
+    if (!id) return;
+    setTriggering(true);
+    try {
+      let inputData: Record<string, unknown> | null = null;
+      if (runInput.trim() && runInput.trim() !== "{}") {
+        inputData = JSON.parse(runInput);
+      }
+      await createRun(id, { input_data: inputData });
+      setShowRunInput(false);
+      setRunInput("{}");
+      loadRuns(id);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setTriggering(false);
+    }
+  }
 
   async function handleSave() {
     if (!id) return;
@@ -70,6 +126,12 @@ export function AgentDetailPage() {
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {!editing && (
             <>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowRunInput(!showRunInput)}
+              >
+                Run
+              </button>
               <button className="btn" onClick={() => setEditing(true)}>
                 Edit
               </button>
@@ -85,6 +147,38 @@ export function AgentDetailPage() {
       </div>
 
       {error && <div className="error">{error}</div>}
+
+      {showRunInput && !editing && (
+        <div className="detail-section" style={{ marginBottom: "1rem" }}>
+          <h2>Trigger Run</h2>
+          <div className="form" style={{ maxWidth: "none" }}>
+            <div className="form-group">
+              <label className="form-label">Input Data (JSON)</label>
+              <textarea
+                className="form-textarea"
+                value={runInput}
+                onChange={(e) => setRunInput(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="form-actions">
+              <button
+                className="btn btn-primary"
+                onClick={handleTriggerRun}
+                disabled={triggering}
+              >
+                {triggering ? "Triggering..." : "Trigger"}
+              </button>
+              <button
+                className="btn"
+                onClick={() => setShowRunInput(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing ? (
         <form
@@ -255,6 +349,88 @@ export function AgentDetailPage() {
             <pre className="detail-code">
               {JSON.stringify(agent.output_schema, null, 2)}
             </pre>
+          </div>
+
+          <div className="detail-section">
+            <h2>
+              Run History{" "}
+              {!runsLoading && (
+                <span
+                  style={{
+                    fontWeight: 400,
+                    textTransform: "none",
+                    letterSpacing: 0,
+                  }}
+                >
+                  ({runs.length})
+                </span>
+              )}
+            </h2>
+            {runsLoading ? (
+              <p
+                style={{
+                  color: "var(--color-text-secondary)",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Loading runs...
+              </p>
+            ) : runs.length === 0 ? (
+              <p
+                style={{
+                  color: "var(--color-text-secondary)",
+                  fontSize: "0.875rem",
+                }}
+              >
+                No runs yet.
+              </p>
+            ) : (
+              <table className="agent-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Duration</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map((run) => {
+                    let duration = "—";
+                    if (run.started_at) {
+                      const start = new Date(run.started_at).getTime();
+                      const end = run.completed_at
+                        ? new Date(run.completed_at).getTime()
+                        : Date.now();
+                      const ms = end - start;
+                      duration =
+                        ms < 1000
+                          ? `${ms}ms`
+                          : `${(ms / 1000).toFixed(1)}s`;
+                    }
+                    return (
+                      <tr key={run.id}>
+                        <td>
+                          <RunStatusBadge status={run.status} />
+                        </td>
+                        <td>
+                          {new Date(run.created_at).toLocaleString()}
+                        </td>
+                        <td>{duration}</td>
+                        <td>
+                          <Link
+                            to={`/runs/${run.id}`}
+                            className="btn btn-sm"
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </>
       )}

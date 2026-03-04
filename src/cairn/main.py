@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from cairn.api.routes import agents, health, providers
+from cairn.api.routes import agents, credentials, health, providers, runs
 from cairn.config import settings
 from cairn.db.connection import close_pool, create_pool
 
@@ -27,3 +27,5 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(agents.router, prefix="/api")
 app.include_router(providers.router, prefix="/api")
+app.include_router(credentials.router, prefix="/api")
+app.include_router(runs.router, prefix="/api")
