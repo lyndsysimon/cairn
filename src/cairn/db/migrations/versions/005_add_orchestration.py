@@ -1,7 +1,7 @@
 """Add orchestration agent support: conversations, messages tables, and is_orchestrator column.
 
-Revision ID: 004
-Revises: 003
+Revision ID: 005
+Revises: 004
 Create Date: 2026-03-04
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
-revision: str = "004"
-down_revision: str | None = "003"
+revision: str = "005"
+down_revision: str | None = "004"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
