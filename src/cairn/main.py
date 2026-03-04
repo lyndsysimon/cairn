@@ -3,15 +3,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from cairn.api.dependencies import get_execution_service
 from cairn.api.routes import agents, credentials, health, providers, runs
 from cairn.config import settings
 from cairn.db.connection import close_pool, create_pool
+from cairn.scheduling import CronScheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_pool(settings.database_url)
+    pool = await create_pool(settings.database_url)
+    scheduler = CronScheduler(pool=pool, execution_service=get_execution_service())
+    await scheduler.start()
     yield
+    await scheduler.stop()
     await close_pool()
 
 
