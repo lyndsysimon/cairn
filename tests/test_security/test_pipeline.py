@@ -86,9 +86,7 @@ class TestMultipleMiddlewares:
         assert result == "BAR BAZ"
 
     async def test_inbound_aggregates_warnings(self):
-        pipeline = SecurityPipeline(
-            middlewares=[_WarningMiddleware(), _ReplaceMiddleware()]
-        )
+        pipeline = SecurityPipeline(middlewares=[_WarningMiddleware(), _ReplaceMiddleware()])
         content, warnings = await pipeline.inspect_inbound("foo data")
         # _WarningMiddleware passes content through; _ReplaceMiddleware replaces foo
         assert content == "bar data"

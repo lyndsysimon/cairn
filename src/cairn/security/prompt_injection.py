@@ -16,6 +16,7 @@ class _PatternDef(NamedTuple):
     category: str
     pattern: re.Pattern[str]
 
+
 _PATTERNS: list[_PatternDef] = [
     # -- System prompt override ------------------------------------------------
     _PatternDef(
@@ -127,8 +128,6 @@ class PromptInjectionDetector:
                 continue
             if pdef.pattern.search(content):
                 seen_categories.add(pdef.category)
-                warnings.append(
-                    f"Possible prompt injection detected ({pdef.category})"
-                )
+                warnings.append(f"Possible prompt injection detected ({pdef.category})")
 
         return content, warnings

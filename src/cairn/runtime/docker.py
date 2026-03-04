@@ -101,7 +101,9 @@ class DockerRuntimeProvider:
             return None
 
         proc = await asyncio.create_subprocess_exec(
-            "docker", "logs", container,
+            "docker",
+            "logs",
+            container,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -123,7 +125,11 @@ class DockerRuntimeProvider:
             return
         logger.info("Stopping container %s", container)
         proc = await asyncio.create_subprocess_exec(
-            "docker", "stop", "-t", "10", container,
+            "docker",
+            "stop",
+            "-t",
+            "10",
+            container,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -135,7 +141,10 @@ class DockerRuntimeProvider:
             return
         logger.info("Removing container %s", container)
         proc = await asyncio.create_subprocess_exec(
-            "docker", "rm", "-f", container,
+            "docker",
+            "rm",
+            "-f",
+            container,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -184,13 +193,18 @@ class DockerRuntimeProvider:
         timeout: int,
     ) -> list[str]:
         return [
-            "docker", "run",
-            "-d",                              # detached
-            "--name", container_name,
-            "--label", CAIRN_LABEL,
-            "--network", "none",               # no network by default
-            "--read-only",                      # read-only root fs
-            "--tmpfs", "/tmp:rw,noexec,size=64m",
+            "docker",
+            "run",
+            "-d",  # detached
+            "--name",
+            container_name,
+            "--label",
+            CAIRN_LABEL,
+            "--network",
+            "none",  # no network by default
+            "--read-only",  # read-only root fs
+            "--tmpfs",
+            "/tmp:rw,noexec,size=64m",
             f"--memory={memory_mb}m",
             f"--stop-timeout={timeout}",
             *env_flags,
@@ -200,8 +214,10 @@ class DockerRuntimeProvider:
     @staticmethod
     async def _inspect_state(container: str) -> dict | None:
         proc = await asyncio.create_subprocess_exec(
-            "docker", "inspect",
-            "--format", "{{json .State}}",
+            "docker",
+            "inspect",
+            "--format",
+            "{{json .State}}",
             container,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,

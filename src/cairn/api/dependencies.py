@@ -32,6 +32,4 @@ def get_execution_service() -> ExecutionService:
     credential_store = None
     if settings.encryption_key:
         credential_store = PostgresCredentialStore(get_pool(), settings.encryption_key)
-    return ExecutionService(
-        runtime=runtime, security=security, credential_store=credential_store
-    )
+    return ExecutionService(runtime=runtime, security=security, credential_store=credential_store)

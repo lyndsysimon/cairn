@@ -182,7 +182,8 @@ class TestExecuteFailure:
 
         # Should have recorded the error.
         failed_calls = [
-            c for c in mock_repo.update_status.call_args_list
+            c
+            for c in mock_repo.update_status.call_args_list
             if len(c[0]) >= 3 and c[0][2] == RunStatus.FAILED
         ]
         assert len(failed_calls) >= 1

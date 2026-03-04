@@ -58,9 +58,7 @@ class ExecutionService:
             # 2. Security: inspect outbound input for leaked secrets
             credential_values = [c.value for c in credentials]
             input_json = run.input_data or {}
-            sanitized_input = await pipeline.inspect_outbound(
-                str(input_json), credential_values
-            )
+            sanitized_input = await pipeline.inspect_outbound(str(input_json), credential_values)
             # If the middleware rewrote the input, log it but keep going.
             if sanitized_input != str(input_json):
                 logger.warning("Security middleware modified outbound input for run %s", run.id)
@@ -74,7 +72,9 @@ class ExecutionService:
 
             if runtime_run.status == RunStatus.FAILED:
                 run = await run_repo.update_status(
-                    conn, run.id, RunStatus.FAILED,
+                    conn,
+                    run.id,
+                    RunStatus.FAILED,
                     error_message=runtime_run.error_message or "Runtime failed to start agent",
                 )
                 await conn.commit()
@@ -84,7 +84,9 @@ class ExecutionService:
             container_meta = runtime_run.output_data
             if container_meta:
                 run = await run_repo.update_status(
-                    conn, run.id, RunStatus.RUNNING,
+                    conn,
+                    run.id,
+                    RunStatus.RUNNING,
                     output_data=container_meta,
                 )
                 await conn.commit()
@@ -100,13 +102,9 @@ class ExecutionService:
 
             # 7. Security: inspect inbound output for prompt injection
             if output:
-                sanitized_output, warnings = await pipeline.inspect_inbound(
-                    str(output)
-                )
+                sanitized_output, warnings = await pipeline.inspect_inbound(str(output))
                 if warnings:
-                    logger.warning(
-                        "Security warnings on run %s output: %s", run.id, warnings
-                    )
+                    logger.warning("Security warnings on run %s output: %s", run.id, warnings)
 
             # 8. Persist final state
             final_status = await self._runtime.get_run_status(run)
@@ -116,7 +114,9 @@ class ExecutionService:
                 )
             else:
                 run = await run_repo.update_status(
-                    conn, run.id, RunStatus.FAILED,
+                    conn,
+                    run.id,
+                    RunStatus.FAILED,
                     error_message="Agent exited with non-zero status",
                     output_data=output,
                 )
@@ -126,7 +126,9 @@ class ExecutionService:
             # Propagate cancellation but mark the run.
             await self._runtime.cancel_run(run)
             run = await run_repo.update_status(
-                conn, run.id, RunStatus.CANCELLED,
+                conn,
+                run.id,
+                RunStatus.CANCELLED,
             )
             await conn.commit()
             raise
@@ -134,7 +136,9 @@ class ExecutionService:
         except Exception as exc:
             logger.exception("Execution failed for run %s", run.id)
             run = await run_repo.update_status(
-                conn, run.id, RunStatus.FAILED,
+                conn,
+                run.id,
+                RunStatus.FAILED,
                 error_message=str(exc),
             )
             await conn.commit()
@@ -152,9 +156,7 @@ class ExecutionService:
     # Helpers
     # ------------------------------------------------------------------
 
-    async def _resolve_credentials(
-        self, agent: AgentDefinition
-    ) -> list[CredentialValue]:
+    async def _resolve_credentials(self, agent: AgentDefinition) -> list[CredentialValue]:
         if not agent.credentials or self._credential_store is None:
             return []
         results: list[CredentialValue] = []
@@ -163,9 +165,7 @@ class ExecutionService:
             results.append(value)
         return results
 
-    async def _poll_until_done(
-        self, run: AgentRun, timeout: int
-    ) -> AgentRun:
+    async def _poll_until_done(self, run: AgentRun, timeout: int) -> AgentRun:
         elapsed = 0.0
         while elapsed < timeout:
             status = await self._runtime.get_run_status(run)
