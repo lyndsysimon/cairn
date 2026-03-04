@@ -21,6 +21,7 @@ class CreateAgentRequest(BaseModel):
     trigger: TriggerConfig
     runtime: RuntimeConfig
     credentials: list[CredentialReference] = Field(default_factory=list)
+    security_middlewares: list[str] = Field(default_factory=list)
 
 
 class UpdateAgentRequest(BaseModel):
@@ -34,6 +35,7 @@ class UpdateAgentRequest(BaseModel):
     trigger: TriggerConfig | None = None
     runtime: RuntimeConfig | None = None
     credentials: list[CredentialReference] | None = None
+    security_middlewares: list[str] | None = None
     status: AgentStatus | None = None
 
 
@@ -49,6 +51,7 @@ class AgentResponse(BaseModel):
     trigger: TriggerConfig
     runtime: RuntimeConfig
     credentials: list[CredentialReference]
+    security_middlewares: list[str]
     status: AgentStatus
     created_at: datetime
     updated_at: datetime

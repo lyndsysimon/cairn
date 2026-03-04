@@ -20,12 +20,14 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
         INSERT INTO agents (
             id, name, description, model_provider, model_name,
             system_prompt, input_schema, output_schema,
-            trigger_config, runtime_config, credentials, status,
+            trigger_config, runtime_config, credentials,
+            security_middlewares, status,
             created_at, updated_at
         ) VALUES (
             %(id)s, %(name)s, %(description)s, %(model_provider)s, %(model_name)s,
             %(system_prompt)s, %(input_schema)s, %(output_schema)s,
-            %(trigger_config)s, %(runtime_config)s, %(credentials)s, %(status)s,
+            %(trigger_config)s, %(runtime_config)s, %(credentials)s,
+            %(security_middlewares)s, %(status)s,
             %(created_at)s, %(updated_at)s
         )
         """,
@@ -41,6 +43,7 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "trigger_config": Jsonb(dumped["trigger"]),
             "runtime_config": Jsonb(dumped["runtime"]),
             "credentials": Jsonb(dumped["credentials"]),
+            "security_middlewares": Jsonb(dumped["security_middlewares"]),
             "status": agent.status.value,
             "created_at": agent.created_at,
             "updated_at": agent.updated_at,
@@ -101,6 +104,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             trigger_config = %(trigger_config)s,
             runtime_config = %(runtime_config)s,
             credentials = %(credentials)s,
+            security_middlewares = %(security_middlewares)s,
             status = %(status)s,
             updated_at = %(updated_at)s
         WHERE id = %(id)s
@@ -117,6 +121,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "trigger_config": Jsonb(dumped["trigger"]),
             "runtime_config": Jsonb(dumped["runtime"]),
             "credentials": Jsonb(dumped["credentials"]),
+            "security_middlewares": Jsonb(dumped["security_middlewares"]),
             "status": agent.status.value,
             "updated_at": agent.updated_at,
         },
@@ -145,6 +150,7 @@ def _row_to_agent(row: dict) -> AgentDefinition:
         trigger=row["trigger_config"],
         runtime=row["runtime_config"],
         credentials=row["credentials"],
+        security_middlewares=row.get("security_middlewares", []),
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

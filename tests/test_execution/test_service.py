@@ -67,10 +67,11 @@ def _make_runtime(
 
 
 def _make_security():
-    security = AsyncMock()
-    security.inspect_outbound = AsyncMock(side_effect=lambda prompt, _: prompt)
-    security.inspect_inbound = AsyncMock(side_effect=lambda content: (content, []))
-    return security
+    pipeline = AsyncMock()
+    pipeline.inspect_outbound = AsyncMock(side_effect=lambda prompt, _: prompt)
+    pipeline.inspect_inbound = AsyncMock(side_effect=lambda content: (content, []))
+    pipeline.for_agent = lambda _agent: pipeline
+    return pipeline
 
 
 def _make_cred_store():
@@ -222,14 +223,15 @@ class TestSecurityInspection:
     @pytest.mark.asyncio
     async def test_security_warnings_logged(self, agent, pending_run):
         runtime = _make_runtime()
-        security = AsyncMock()
-        security.inspect_outbound = AsyncMock(side_effect=lambda prompt, _: prompt)
-        security.inspect_inbound = AsyncMock(
+        pipeline = AsyncMock()
+        pipeline.inspect_outbound = AsyncMock(side_effect=lambda prompt, _: prompt)
+        pipeline.inspect_inbound = AsyncMock(
             return_value=("sanitized", ["possible injection detected"])
         )
+        pipeline.for_agent = lambda _agent: pipeline
         conn = _make_conn()
 
-        service = ExecutionService(runtime, security)
+        service = ExecutionService(runtime, pipeline)
 
         with patch("cairn.execution.service.run_repo") as mock_repo:
             mock_repo.update_status = AsyncMock(return_value=pending_run)

@@ -20,7 +20,7 @@ from cairn.models.agent import AgentDefinition
 from cairn.models.credential import CredentialValue
 from cairn.models.run import AgentRun, RunStatus
 from cairn.runtime.base import RuntimeProvider
-from cairn.security.base import SecurityInspector
+from cairn.security.base import SecurityPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class ExecutionService:
     def __init__(
         self,
         runtime: RuntimeProvider,
-        security: SecurityInspector,
+        security: SecurityPipeline,
         credential_store: CredentialStore | None = None,
     ) -> None:
         self._runtime = runtime
@@ -49,13 +49,16 @@ class ExecutionService:
     ) -> AgentRun:
         """Run the full execution lifecycle. Returns the final AgentRun."""
         try:
+            # 0. Build per-agent security pipeline
+            pipeline = self._security.for_agent(agent)
+
             # 1. Resolve credentials
             credentials = await self._resolve_credentials(agent)
 
             # 2. Security: inspect outbound input for leaked secrets
             credential_values = [c.value for c in credentials]
             input_json = run.input_data or {}
-            sanitized_input = await self._security.inspect_outbound(
+            sanitized_input = await pipeline.inspect_outbound(
                 str(input_json), credential_values
             )
             # If the middleware rewrote the input, log it but keep going.
@@ -97,7 +100,7 @@ class ExecutionService:
 
             # 7. Security: inspect inbound output for prompt injection
             if output:
-                sanitized_output, warnings = await self._security.inspect_inbound(
+                sanitized_output, warnings = await pipeline.inspect_inbound(
                     str(output)
                 )
                 if warnings:
