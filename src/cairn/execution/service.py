@@ -9,13 +9,18 @@ Coordinates the full lifecycle of an agent run:
   6. Persist final run state
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 from psycopg import AsyncConnection
 
-from cairn.credentials.base import CredentialStore
 from cairn.db.repositories import run_repo
+
+if TYPE_CHECKING:
+    from cairn.credentials.base import CredentialStore
 from cairn.models.agent import AgentDefinition
 from cairn.models.credential import CredentialValue
 from cairn.models.run import AgentRun, RunStatus
