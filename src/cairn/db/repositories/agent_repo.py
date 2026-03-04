@@ -21,13 +21,13 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             id, name, description, model_provider, model_name,
             system_prompt, input_schema, output_schema,
             trigger_config, runtime_config, credentials,
-            security_middlewares, status,
+            security_middlewares, is_orchestrator, status,
             created_at, updated_at
         ) VALUES (
             %(id)s, %(name)s, %(description)s, %(model_provider)s, %(model_name)s,
             %(system_prompt)s, %(input_schema)s, %(output_schema)s,
             %(trigger_config)s, %(runtime_config)s, %(credentials)s,
-            %(security_middlewares)s, %(status)s,
+            %(security_middlewares)s, %(is_orchestrator)s, %(status)s,
             %(created_at)s, %(updated_at)s
         )
         """,
@@ -44,6 +44,7 @@ async def create(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "runtime_config": Jsonb(dumped["runtime"]),
             "credentials": Jsonb(dumped["credentials"]),
             "security_middlewares": Jsonb(dumped["security_middlewares"]),
+            "is_orchestrator": agent.is_orchestrator,
             "status": agent.status.value,
             "created_at": agent.created_at,
             "updated_at": agent.updated_at,
@@ -105,6 +106,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             runtime_config = %(runtime_config)s,
             credentials = %(credentials)s,
             security_middlewares = %(security_middlewares)s,
+            is_orchestrator = %(is_orchestrator)s,
             status = %(status)s,
             updated_at = %(updated_at)s
         WHERE id = %(id)s
@@ -122,6 +124,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
             "runtime_config": Jsonb(dumped["runtime"]),
             "credentials": Jsonb(dumped["credentials"]),
             "security_middlewares": Jsonb(dumped["security_middlewares"]),
+            "is_orchestrator": agent.is_orchestrator,
             "status": agent.status.value,
             "updated_at": agent.updated_at,
         },
@@ -168,6 +171,7 @@ def _row_to_agent(row: dict) -> AgentDefinition:
         runtime=row["runtime_config"],
         credentials=row["credentials"],
         security_middlewares=row.get("security_middlewares", []),
+        is_orchestrator=row.get("is_orchestrator", False),
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

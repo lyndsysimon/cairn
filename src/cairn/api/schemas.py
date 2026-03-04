@@ -22,6 +22,7 @@ class CreateAgentRequest(BaseModel):
     runtime: RuntimeConfig
     credentials: list[CredentialReference] = Field(default_factory=list)
     security_middlewares: list[str] = Field(default_factory=list)
+    is_orchestrator: bool = False
 
 
 class UpdateAgentRequest(BaseModel):
@@ -36,6 +37,7 @@ class UpdateAgentRequest(BaseModel):
     runtime: RuntimeConfig | None = None
     credentials: list[CredentialReference] | None = None
     security_middlewares: list[str] | None = None
+    is_orchestrator: bool | None = None
     status: AgentStatus | None = None
 
 
@@ -52,6 +54,7 @@ class AgentResponse(BaseModel):
     runtime: RuntimeConfig
     credentials: list[CredentialReference]
     security_middlewares: list[str]
+    is_orchestrator: bool
     status: AgentStatus
     created_at: datetime
     updated_at: datetime
@@ -147,4 +150,61 @@ class RunResponse(BaseModel):
 
 class RunListResponse(BaseModel):
     runs: list[RunResponse]
+    total: int
+
+
+# --- Conversation schemas ---
+
+
+class CreateConversationRequest(BaseModel):
+    orchestrator_agent_id: UUID
+    title: str = ""
+
+
+class SendMessageRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+
+class ToolCallResponse(BaseModel):
+    id: str
+    agent_name: str
+    input_data: dict
+
+
+class ToolResultResponse(BaseModel):
+    tool_call_id: str
+    agent_name: str
+    output_data: dict | None
+    error: str | None
+
+
+class MessageResponse(BaseModel):
+    id: UUID
+    conversation_id: UUID
+    role: str
+    content: str
+    tool_calls: list[ToolCallResponse] | None
+    tool_result: ToolResultResponse | None
+    created_at: datetime
+
+
+class ConversationResponse(BaseModel):
+    id: UUID
+    orchestrator_agent_id: UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationDetailResponse(BaseModel):
+    id: UUID
+    orchestrator_agent_id: UUID
+    title: str
+    messages: list[MessageResponse]
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationListResponse(BaseModel):
+    conversations: list[ConversationResponse]
     total: int

@@ -32,6 +32,8 @@ class AgentDefinition(BaseModel):
     credentials: list[CredentialReference] = Field(default_factory=list)
     security_middlewares: list[str] = Field(default_factory=list)
 
+    is_orchestrator: bool = False
+
     status: AgentStatus = AgentStatus.ACTIVE
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
