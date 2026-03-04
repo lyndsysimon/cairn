@@ -1,7 +1,9 @@
 from enum import StrEnum
 from typing import Annotated, Literal
+from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field
+from croniter import croniter
+from pydantic import BaseModel, Field, field_validator
 
 
 class TriggerType(StrEnum):
@@ -19,6 +21,22 @@ class ScheduledTrigger(BaseModel):
     type: Literal["scheduled"] = "scheduled"
     cron_expression: str
     timezone: str = "UTC"
+
+    @field_validator("cron_expression")
+    @classmethod
+    def validate_cron_expression(cls, v: str) -> str:
+        if not croniter.is_valid(v):
+            raise ValueError(f"Invalid cron expression: {v!r}")
+        return v
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v: str) -> str:
+        try:
+            ZoneInfo(v)
+        except (KeyError, ValueError):
+            raise ValueError(f"Invalid timezone: {v!r}")
+        return v
 
 
 class WebhookTrigger(BaseModel):
