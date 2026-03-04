@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listAgents, deleteAgent } from "../api/client";
-import type { Agent } from "../api/types";
+import type { Agent, AgentStatus } from "../api/types";
 import { StatusBadge } from "../components/StatusBadge";
+
+const AGENT_STATUSES: AgentStatus[] = ["active", "inactive", "error"];
 
 export function AgentListPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("");
 
-  async function load() {
+  async function load(status?: string) {
     try {
       setLoading(true);
-      const data = await listAgents();
+      const data = await listAgents(status);
       setAgents(data.agents);
       setError(null);
     } catch (e) {
@@ -23,8 +26,8 @@ export function AgentListPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(statusFilter || undefined);
+  }, [statusFilter]);
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete agent "${name}"?`)) return;
@@ -40,9 +43,24 @@ export function AgentListPage() {
     <>
       <div className="page-header">
         <h1>Agents</h1>
-        <Link to="/agents/new" className="btn btn-primary">
-          + New Agent
-        </Link>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <select
+            className="form-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ width: "auto", minWidth: "140px" }}
+          >
+            <option value="">All statuses</option>
+            {AGENT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <Link to="/agents/new" className="btn btn-primary">
+            + New Agent
+          </Link>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}

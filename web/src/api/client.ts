@@ -34,8 +34,11 @@ async function request<T>(
   return res.json();
 }
 
-export function listAgents(): Promise<AgentListResponse> {
-  return request("/agents");
+export function listAgents(
+  status?: string,
+): Promise<AgentListResponse> {
+  const params = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request(`/agents${params}`);
 }
 
 export function getAgent(id: string): Promise<Agent> {
@@ -137,8 +140,12 @@ export function deleteCredential(id: string): Promise<void> {
 
 // --- Agent Runs ---
 
-export function listRuns(agentId: string): Promise<RunListResponse> {
-  return request(`/agents/${agentId}/runs`);
+export function listRuns(
+  agentId: string,
+  status?: string,
+): Promise<RunListResponse> {
+  const params = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request(`/agents/${agentId}/runs${params}`);
 }
 
 export function getRun(runId: string): Promise<AgentRun> {

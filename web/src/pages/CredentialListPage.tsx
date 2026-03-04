@@ -3,18 +3,21 @@ import { Link } from "react-router-dom";
 import { listCredentials, deleteCredential } from "../api/client";
 import type { Credential } from "../api/types";
 
+const STORE_NAMES = ["postgres", "bitwarden"];
+
 export function CredentialListPage() {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [storeFilter, setStoreFilter] = useState<string>("");
 
   useEffect(() => {
-    loadCredentials();
-  }, []);
+    loadCredentials(storeFilter || undefined);
+  }, [storeFilter]);
 
-  function loadCredentials() {
+  function loadCredentials(storeName?: string) {
     setLoading(true);
-    listCredentials()
+    listCredentials(storeName)
       .then((data) => setCredentials(data.credentials))
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
@@ -37,9 +40,24 @@ export function CredentialListPage() {
     <>
       <div className="page-header">
         <h1>Credentials</h1>
-        <Link to="/credentials/new" className="btn btn-primary">
-          Add Credential
-        </Link>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <select
+            className="form-select"
+            value={storeFilter}
+            onChange={(e) => setStoreFilter(e.target.value)}
+            style={{ width: "auto", minWidth: "140px" }}
+          >
+            <option value="">All stores</option>
+            {STORE_NAMES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <Link to="/credentials/new" className="btn btn-primary">
+            Add Credential
+          </Link>
+        </div>
       </div>
 
       {credentials.length === 0 ? (

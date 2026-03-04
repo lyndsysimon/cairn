@@ -7,11 +7,12 @@ export function ProviderListPage() {
   const [providers, setProviders] = useState<ModelProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [enabledFilter, setEnabledFilter] = useState<string>("");
 
-  async function load() {
+  async function load(enabledOnly?: boolean) {
     try {
       setLoading(true);
-      const data = await listProviders();
+      const data = await listProviders(enabledOnly);
       setProviders(data.providers);
       setError(null);
     } catch (e) {
@@ -22,8 +23,8 @@ export function ProviderListPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(enabledFilter === "enabled" ? true : undefined);
+  }, [enabledFilter]);
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete provider "${name}"?`)) return;
@@ -39,9 +40,20 @@ export function ProviderListPage() {
     <>
       <div className="page-header">
         <h1>Model Providers</h1>
-        <Link to="/providers/new" className="btn btn-primary">
-          + New Provider
-        </Link>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <select
+            className="form-select"
+            value={enabledFilter}
+            onChange={(e) => setEnabledFilter(e.target.value)}
+            style={{ width: "auto", minWidth: "140px" }}
+          >
+            <option value="">All</option>
+            <option value="enabled">Enabled only</option>
+          </select>
+          <Link to="/providers/new" className="btn btn-primary">
+            + New Provider
+          </Link>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
