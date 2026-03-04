@@ -129,9 +129,7 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
     return agent
 
 
-async def get_by_webhook_path(
-    conn: AsyncConnection, path: str
-) -> AgentDefinition | None:
+async def get_by_webhook_path(conn: AsyncConnection, path: str) -> AgentDefinition | None:
     """Find an active agent whose webhook trigger matches the given path."""
     async with conn.cursor(row_factory=dict_row) as cur:
         await cur.execute(
