@@ -129,6 +129,25 @@ async def update(conn: AsyncConnection, agent: AgentDefinition) -> AgentDefiniti
     return agent
 
 
+async def get_by_webhook_path(
+    conn: AsyncConnection, path: str
+) -> AgentDefinition | None:
+    """Find an active agent whose webhook trigger matches the given path."""
+    async with conn.cursor(row_factory=dict_row) as cur:
+        await cur.execute(
+            "SELECT * FROM agents"
+            " WHERE status = %s"
+            "   AND trigger_config->>'type' = 'webhook'"
+            "   AND trigger_config->>'path' = %s"
+            " LIMIT 1",
+            (AgentStatus.ACTIVE.value, path),
+        )
+        row = await cur.fetchone()
+    if row is None:
+        return None
+    return _row_to_agent(row)
+
+
 async def delete(conn: AsyncConnection, agent_id: UUID) -> bool:
     cur = await conn.execute(
         "DELETE FROM agents WHERE id = %s",
