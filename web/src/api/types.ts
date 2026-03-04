@@ -88,3 +88,46 @@ export interface UpdateAgentRequest {
   credentials?: CredentialReference[];
   status?: AgentStatus;
 }
+
+// --- Model Provider types ---
+
+export interface ModelConfig {
+  model_id: string;
+  display_name: string;
+  is_enabled: boolean;
+}
+
+export interface ModelProvider {
+  id: string;
+  name: string;
+  provider_type: string;
+  api_base_url: string | null;
+  api_key_credential_id: string | null;
+  models: ModelConfig[];
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProviderListResponse {
+  providers: ModelProvider[];
+  total: number;
+}
+
+export interface CreateProviderRequest {
+  name: string;
+  provider_type: string;
+  api_base_url?: string | null;
+  api_key_credential_id?: string | null;
+  models?: ModelConfig[];
+  is_enabled?: boolean;
+}
+
+export interface UpdateProviderRequest {
+  name?: string;
+  provider_type?: string;
+  api_base_url?: string | null;
+  api_key_credential_id?: string | null;
+  models?: ModelConfig[];
+  is_enabled?: boolean;
+}

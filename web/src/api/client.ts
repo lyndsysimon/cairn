@@ -2,7 +2,11 @@ import type {
   Agent,
   AgentListResponse,
   CreateAgentRequest,
+  CreateProviderRequest,
+  ModelProvider,
+  ProviderListResponse,
   UpdateAgentRequest,
+  UpdateProviderRequest,
 } from "./types";
 
 const BASE = "/api";
@@ -50,4 +54,40 @@ export function updateAgent(
 
 export function deleteAgent(id: string): Promise<void> {
   return request(`/agents/${id}`, { method: "DELETE" });
+}
+
+// --- Model Providers ---
+
+export function listProviders(
+  enabledOnly?: boolean,
+): Promise<ProviderListResponse> {
+  const params = enabledOnly ? "?enabled_only=true" : "";
+  return request(`/providers${params}`);
+}
+
+export function getProvider(id: string): Promise<ModelProvider> {
+  return request(`/providers/${id}`);
+}
+
+export function createProvider(
+  data: CreateProviderRequest,
+): Promise<ModelProvider> {
+  return request("/providers", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateProvider(
+  id: string,
+  data: UpdateProviderRequest,
+): Promise<ModelProvider> {
+  return request(`/providers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteProvider(id: string): Promise<void> {
+  return request(`/providers/${id}`, { method: "DELETE" });
 }

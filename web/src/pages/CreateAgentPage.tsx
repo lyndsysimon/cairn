@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createAgent } from "../api/client";
+import { createAgent, listProviders } from "../api/client";
 import type {
   CreateAgentRequest,
+  ModelProvider,
   RuntimeType,
   TriggerType,
 } from "../api/types";
@@ -25,11 +26,12 @@ export function CreateAgentPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [providers, setProviders] = useState<ModelProvider[]>([]);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [modelProvider, setModelProvider] = useState("anthropic");
-  const [modelName, setModelName] = useState("claude-sonnet-4-20250514");
+  const [modelProvider, setModelProvider] = useState("");
+  const [modelName, setModelName] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [triggerType, setTriggerType] = useState<TriggerType>("manual");
   const [cronExpression, setCronExpression] = useState("0 * * * *");
@@ -38,6 +40,12 @@ export function CreateAgentPage() {
   const [runtimeImage, setRuntimeImage] = useState("python:3.13-slim");
   const [inputSchema, setInputSchema] = useState('{"type": "object"}');
   const [outputSchema, setOutputSchema] = useState('{"type": "object"}');
+
+  useEffect(() => {
+    listProviders(true)
+      .then((data) => setProviders(data.providers))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -123,23 +131,68 @@ export function CreateAgentPage() {
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Model Provider</label>
-            <input
-              className="form-input"
-              value={modelProvider}
-              onChange={(e) => setModelProvider(e.target.value)}
-              required
-              placeholder="anthropic"
-            />
+            {providers.length > 0 ? (
+              <select
+                className="form-select"
+                value={modelProvider}
+                onChange={(e) => {
+                  setModelProvider(e.target.value);
+                  setModelName("");
+                }}
+                required
+              >
+                <option value="">Select a provider...</option>
+                {providers.map((p) => (
+                  <option key={p.id} value={p.provider_type}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="form-input"
+                value={modelProvider}
+                onChange={(e) => setModelProvider(e.target.value)}
+                required
+                placeholder="anthropic"
+              />
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Model Name</label>
-            <input
-              className="form-input"
-              value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              required
-              placeholder="claude-sonnet-4-20250514"
-            />
+            {(() => {
+              const selectedProvider = providers.find(
+                (p) => p.provider_type === modelProvider,
+              );
+              const enabledModels =
+                selectedProvider?.models.filter((m) => m.is_enabled) ?? [];
+              if (enabledModels.length > 0) {
+                return (
+                  <select
+                    className="form-select"
+                    value={modelName}
+                    onChange={(e) => setModelName(e.target.value)}
+                    required
+                  >
+                    <option value="">Select a model...</option>
+                    {enabledModels.map((m) => (
+                      <option key={m.model_id} value={m.model_id}>
+                        {m.display_name}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }
+              return (
+                <input
+                  className="form-input"
+                  value={modelName}
+                  onChange={(e) => setModelName(e.target.value)}
+                  required
+                  placeholder="claude-sonnet-4-20250514"
+                />
+              );
+            })()}
           </div>
         </div>
 
