@@ -30,6 +30,10 @@ For full architecture, security model, threat model, use cases, and requirements
 - **Security Middleware**: Sits between agents and the outside world. Inspects outbound prompts for secret leakage and inbound responses for prompt injection.
 - **Triggers**: Manual, scheduled (cron), event/webhook, or agent-to-agent.
 
+## Development Workflow
+
+- **Always run `ruff format src/ tests/` and `ruff check src/ tests/` before committing and pushing.** CI will reject unformatted code.
+
 ## Platform Support
 
 macOS, Linux, and Windows.
