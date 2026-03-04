@@ -84,9 +84,7 @@ class TestSchedulerTick:
             mock_agent_repo.list_all = AsyncMock(return_value=[agent])
             mock_sched_repo.get_last_scheduled_at = AsyncMock(return_value=None)
             mock_sched_repo.upsert_last_scheduled_at = AsyncMock()
-            mock_run_repo.create = AsyncMock(
-                return_value=AgentRun(agent_id=agent.id)
-            )
+            mock_run_repo.create = AsyncMock(return_value=AgentRun(agent_id=agent.id))
 
             await scheduler._tick()
 
@@ -165,16 +163,10 @@ class TestSchedulerTick:
             patch("cairn.scheduling.scheduler.run_repo") as mock_run_repo,
             patch("cairn.scheduling.scheduler.schedule_repo") as mock_sched_repo,
         ):
-            mock_agent_repo.list_all = AsyncMock(
-                return_value=[bad_agent, good_agent]
-            )
-            mock_sched_repo.get_last_scheduled_at = AsyncMock(
-                side_effect=mock_get_last_scheduled
-            )
+            mock_agent_repo.list_all = AsyncMock(return_value=[bad_agent, good_agent])
+            mock_sched_repo.get_last_scheduled_at = AsyncMock(side_effect=mock_get_last_scheduled)
             mock_sched_repo.upsert_last_scheduled_at = AsyncMock()
-            mock_run_repo.create = AsyncMock(
-                return_value=AgentRun(agent_id=good_agent.id)
-            )
+            mock_run_repo.create = AsyncMock(return_value=AgentRun(agent_id=good_agent.id))
 
             await scheduler._tick()
 
@@ -221,9 +213,7 @@ class TestSchedulerTick:
                 return_value=datetime(2026, 3, 4, 16, 0, 0, tzinfo=UTC)
             )
             mock_sched_repo.upsert_last_scheduled_at = AsyncMock()
-            mock_run_repo.create = AsyncMock(
-                return_value=AgentRun(agent_id=agent.id)
-            )
+            mock_run_repo.create = AsyncMock(return_value=AgentRun(agent_id=agent.id))
 
             await scheduler._tick()
 

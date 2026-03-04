@@ -93,9 +93,7 @@ class CronScheduler:
                 conn, status=AgentStatus.ACTIVE, limit=1000, offset=0
             )
 
-        scheduled_agents = [
-            a for a in agents if isinstance(a.trigger, ScheduledTrigger)
-        ]
+        scheduled_agents = [a for a in agents if isinstance(a.trigger, ScheduledTrigger)]
 
         if not scheduled_agents:
             return
@@ -149,9 +147,7 @@ class CronScheduler:
 
             run = AgentRun(agent_id=agent.id, input_data=None)
             run = await run_repo.create(conn, run)
-            await schedule_repo.upsert_last_scheduled_at(
-                conn, agent.id, most_recent_fire_utc
-            )
+            await schedule_repo.upsert_last_scheduled_at(conn, agent.id, most_recent_fire_utc)
             await conn.commit()
 
         asyncio.create_task(
@@ -165,6 +161,4 @@ class CronScheduler:
             async with self._pool.connection() as conn:
                 await self._execution_service.execute(agent, run, conn)
         except Exception:
-            logger.exception(
-                "Scheduled run %s for agent %s failed", run.id, agent.id
-            )
+            logger.exception("Scheduled run %s for agent %s failed", run.id, agent.id)

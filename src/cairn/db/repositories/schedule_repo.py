@@ -11,9 +11,7 @@ from psycopg import AsyncConnection
 from psycopg.rows import dict_row
 
 
-async def get_last_scheduled_at(
-    conn: AsyncConnection, agent_id: UUID
-) -> datetime | None:
+async def get_last_scheduled_at(conn: AsyncConnection, agent_id: UUID) -> datetime | None:
     """Return the last_scheduled_at timestamp for an agent, or None if never scheduled."""
     async with conn.cursor(row_factory=dict_row) as cur:
         await cur.execute(

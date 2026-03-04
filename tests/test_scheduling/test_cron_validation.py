@@ -27,13 +27,9 @@ class TestTimezoneValidation:
         assert trigger.timezone == "UTC"
 
     def test_valid_timezone(self):
-        trigger = ScheduledTrigger(
-            cron_expression="* * * * *", timezone="America/New_York"
-        )
+        trigger = ScheduledTrigger(cron_expression="* * * * *", timezone="America/New_York")
         assert trigger.timezone == "America/New_York"
 
     def test_invalid_timezone_rejected(self):
         with pytest.raises(ValidationError, match="Invalid timezone"):
-            ScheduledTrigger(
-                cron_expression="* * * * *", timezone="Not/A/Timezone"
-            )
+            ScheduledTrigger(cron_expression="* * * * *", timezone="Not/A/Timezone")
