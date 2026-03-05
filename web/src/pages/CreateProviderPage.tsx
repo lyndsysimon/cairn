@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createProvider } from "../api/client";
+import { createProvider, discoverModels } from "../api/client";
 import type { ModelConfig } from "../api/types";
 
 const PROVIDER_TYPES = [
   "anthropic",
   "openai",
+  "openrouter",
   "azure_openai",
   "ollama",
   "bedrock",
   "vertex_ai",
 ];
+
+const DISCOVERABLE_TYPES = new Set(["openrouter"]);
 
 export function CreateProviderPage() {
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ export function CreateProviderPage() {
 
   const [newModelId, setNewModelId] = useState("");
   const [newModelDisplayName, setNewModelDisplayName] = useState("");
+  const [fetchingModels, setFetchingModels] = useState(false);
 
   function addModel() {
     if (!newModelId.trim() || !newModelDisplayName.trim()) return;
@@ -40,6 +44,30 @@ export function CreateProviderPage() {
     ]);
     setNewModelId("");
     setNewModelDisplayName("");
+  }
+
+  async function handleFetchModels() {
+    setFetchingModels(true);
+    setError(null);
+    try {
+      const resolvedType =
+        providerType === "__custom__" ? customProviderType.trim() : providerType;
+      const result = await discoverModels({
+        provider_type: resolvedType,
+        api_base_url: apiBaseUrl || null,
+        api_key_credential_id: apiKeyCredentialId || null,
+      });
+      // Merge fetched models: add new ones, preserve existing
+      setModels((prev) => {
+        const existingIds = new Set(prev.map((m) => m.model_id));
+        const newModels = result.models.filter((m) => !existingIds.has(m.model_id));
+        return [...prev, ...newModels];
+      });
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setFetchingModels(false);
+    }
   }
 
   function removeModel(index: number) {
@@ -178,6 +206,23 @@ export function CreateProviderPage() {
 
         <div className="form-group">
           <label className="form-label">Models</label>
+          {DISCOVERABLE_TYPES.has(
+            providerType === "__custom__" ? customProviderType.trim() : providerType,
+          ) && (
+            <div style={{ marginBottom: "0.75rem" }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleFetchModels}
+                disabled={fetchingModels}
+              >
+                {fetchingModels ? "Fetching..." : "Fetch Models"}
+              </button>
+              <span className="form-hint" style={{ marginLeft: "0.5rem" }}>
+                Populate the model list from the provider API
+              </span>
+            </div>
+          )}
           {models.length > 0 && (
             <table className="agent-table" style={{ marginBottom: "0.75rem" }}>
               <thead>

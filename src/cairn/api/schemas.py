@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from cairn.models.agent import AgentStatus
 from cairn.models.credential import CredentialReference
@@ -86,6 +86,9 @@ class UpdateProviderRequest(BaseModel):
     is_enabled: bool | None = None
 
 
+DISCOVERABLE_PROVIDER_TYPES: frozenset[str] = frozenset({"openrouter"})
+
+
 class ProviderResponse(BaseModel):
     id: UUID
     name: str
@@ -97,10 +100,25 @@ class ProviderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def supports_model_discovery(self) -> bool:
+        return self.provider_type in DISCOVERABLE_PROVIDER_TYPES
+
 
 class ProviderListResponse(BaseModel):
     providers: list[ProviderResponse]
     total: int
+
+
+class DiscoverModelsRequest(BaseModel):
+    provider_type: str
+    api_base_url: str | None = None
+    api_key_credential_id: str | None = None
+
+
+class DiscoverModelsResponse(BaseModel):
+    models: list[ModelConfig]
 
 
 # --- Credential schemas ---

@@ -8,6 +8,8 @@ import type {
   CreateRunRequest,
   Credential,
   CredentialListResponse,
+  DiscoverModelsRequest,
+  DiscoverModelsResponse,
   ModelProvider,
   ProviderListResponse,
   RunListResponse,
@@ -100,6 +102,21 @@ export function updateProvider(
 
 export function deleteProvider(id: string): Promise<void> {
   return request(`/providers/${id}`, { method: "DELETE" });
+}
+
+export function discoverModels(
+  data: DiscoverModelsRequest,
+): Promise<DiscoverModelsResponse> {
+  return request("/providers/discover-models", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function discoverProviderModels(
+  providerId: string,
+): Promise<DiscoverModelsResponse> {
+  return request(`/providers/${providerId}/discover-models`, { method: "POST" });
 }
 
 // --- Credentials ---

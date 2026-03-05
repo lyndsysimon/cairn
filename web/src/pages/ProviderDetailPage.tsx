@@ -4,6 +4,7 @@ import {
   getProvider,
   updateProvider,
   deleteProvider,
+  discoverProviderModels,
 } from "../api/client";
 import type { ModelProvider, ModelConfig } from "../api/types";
 
@@ -24,6 +25,7 @@ export function ProviderDetailPage() {
 
   const [newModelId, setNewModelId] = useState("");
   const [newModelDisplayName, setNewModelDisplayName] = useState("");
+  const [fetchingModels, setFetchingModels] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -44,6 +46,24 @@ export function ProviderDetailPage() {
     setEditApiKeyCredentialId(p.api_key_credential_id || "");
     setEditIsEnabled(p.is_enabled);
     setEditModels(p.models.map((m) => ({ ...m })));
+  }
+
+  async function handleFetchModels() {
+    if (!id) return;
+    setFetchingModels(true);
+    setError(null);
+    try {
+      const result = await discoverProviderModels(id);
+      setEditModels((prev) => {
+        const existingIds = new Set(prev.map((m) => m.model_id));
+        const newModels = result.models.filter((m) => !existingIds.has(m.model_id));
+        return [...prev, ...newModels];
+      });
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setFetchingModels(false);
+    }
   }
 
   function addModel() {
@@ -186,6 +206,21 @@ export function ProviderDetailPage() {
 
           <div className="form-group">
             <label className="form-label">Models</label>
+            {provider?.supports_model_discovery && (
+              <div style={{ marginBottom: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleFetchModels}
+                  disabled={fetchingModels}
+                >
+                  {fetchingModels ? "Fetching..." : "Fetch Models"}
+                </button>
+                <span className="form-hint" style={{ marginLeft: "0.5rem" }}>
+                  Add models from the provider API (new ones only)
+                </span>
+              </div>
+            )}
             {editModels.length > 0 && (
               <table
                 className="agent-table"
