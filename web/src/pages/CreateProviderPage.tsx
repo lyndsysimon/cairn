@@ -39,6 +39,7 @@ export function CreateProviderPage() {
   const [newModelId, setNewModelId] = useState("");
   const [newModelDisplayName, setNewModelDisplayName] = useState("");
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
   const nameManuallyEdited = useRef(false);
 
   function addModel() {
@@ -245,7 +246,7 @@ export function CreateProviderPage() {
           )}
           {models.length > 0 && (
             <>
-              <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem" }}>
+              <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
                 <button
                   type="button"
                   className="btn btn-sm"
@@ -264,6 +265,13 @@ export function CreateProviderPage() {
                 >
                   Select None
                 </button>
+                <input
+                  className="form-input"
+                  value={modelSearch}
+                  onChange={(e) => setModelSearch(e.target.value)}
+                  placeholder="Search models..."
+                  style={{ marginLeft: "auto", width: "200px" }}
+                />
               </div>
               <table className="agent-table" style={{ marginBottom: "0.75rem" }}>
                 <thead>
@@ -277,6 +285,12 @@ export function CreateProviderPage() {
                 <tbody>
                   {[...models]
                     .sort((a, b) => a.model_id.localeCompare(b.model_id))
+                    .filter(
+                      (m) =>
+                        !modelSearch ||
+                        m.model_id.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                        m.display_name.toLowerCase().includes(modelSearch.toLowerCase()),
+                    )
                     .map((model) => (
                       <tr key={model.model_id}>
                         <td>

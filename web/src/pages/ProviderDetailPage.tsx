@@ -27,6 +27,7 @@ export function ProviderDetailPage() {
   const [newModelId, setNewModelId] = useState("");
   const [newModelDisplayName, setNewModelDisplayName] = useState("");
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -223,7 +224,7 @@ export function ProviderDetailPage() {
             )}
             {editModels.length > 0 && (
               <>
-                <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem" }}>
+                <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
                   <button
                     type="button"
                     className="btn btn-sm"
@@ -246,6 +247,13 @@ export function ProviderDetailPage() {
                   >
                     Select None
                   </button>
+                  <input
+                    className="form-input"
+                    value={modelSearch}
+                    onChange={(e) => setModelSearch(e.target.value)}
+                    placeholder="Search models..."
+                    style={{ marginLeft: "auto", width: "200px" }}
+                  />
                 </div>
                 <table
                   className="agent-table"
@@ -262,6 +270,12 @@ export function ProviderDetailPage() {
                   <tbody>
                     {[...editModels]
                       .sort((a, b) => a.model_id.localeCompare(b.model_id))
+                      .filter(
+                        (m) =>
+                          !modelSearch ||
+                          m.model_id.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                          m.display_name.toLowerCase().includes(modelSearch.toLowerCase()),
+                      )
                       .map((model) => (
                         <tr key={model.model_id}>
                           <td>
