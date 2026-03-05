@@ -105,8 +105,19 @@ export interface ModelProvider {
   api_key_credential_id: string | null;
   models: ModelConfig[];
   is_enabled: boolean;
+  supports_model_discovery: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface DiscoverModelsRequest {
+  provider_type: string;
+  api_base_url?: string | null;
+  api_key_credential_id?: string | null;
+}
+
+export interface DiscoverModelsResponse {
+  models: ModelConfig[];
 }
 
 export interface ProviderListResponse {
