@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createProvider, discoverModels } from "../api/client";
 import type { ModelConfig } from "../api/types";
+import { CredentialSelect } from "../components/CredentialSelect";
+
+function formatProviderName(type: string): string {
+  return type
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 const PROVIDER_TYPES = [
   "anthropic",
@@ -31,6 +39,7 @@ export function CreateProviderPage() {
   const [newModelId, setNewModelId] = useState("");
   const [newModelDisplayName, setNewModelDisplayName] = useState("");
   const [fetchingModels, setFetchingModels] = useState(false);
+  const nameManuallyEdited = useRef(false);
 
   function addModel() {
     if (!newModelId.trim() || !newModelDisplayName.trim()) return;
@@ -70,14 +79,14 @@ export function CreateProviderPage() {
     }
   }
 
-  function removeModel(index: number) {
-    setModels((prev) => prev.filter((_, i) => i !== index));
+  function removeModel(modelId: string) {
+    setModels((prev) => prev.filter((m) => m.model_id !== modelId));
   }
 
-  function toggleModel(index: number) {
+  function toggleModel(modelId: string) {
     setModels((prev) =>
-      prev.map((m, i) =>
-        i === index ? { ...m, is_enabled: !m.is_enabled } : m,
+      prev.map((m) =>
+        m.model_id === modelId ? { ...m, is_enabled: !m.is_enabled } : m,
       ),
     );
   }
@@ -129,7 +138,14 @@ export function CreateProviderPage() {
           <input
             className="form-input"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (e.target.value === "") {
+                nameManuallyEdited.current = false;
+              } else {
+                nameManuallyEdited.current = true;
+              }
+            }}
             required
             maxLength={255}
             placeholder="Anthropic Production"
@@ -142,7 +158,13 @@ export function CreateProviderPage() {
             <select
               className="form-select"
               value={providerType}
-              onChange={(e) => setProviderType(e.target.value)}
+              onChange={(e) => {
+                const newType = e.target.value;
+                setProviderType(newType);
+                if (!nameManuallyEdited.current && newType !== "__custom__") {
+                  setName(formatProviderName(newType));
+                }
+              }}
             >
               {PROVIDER_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -181,11 +203,9 @@ export function CreateProviderPage() {
 
         <div className="form-group">
           <label className="form-label">API Key Credential ID</label>
-          <input
-            className="form-input"
+          <CredentialSelect
             value={apiKeyCredentialId}
-            onChange={(e) => setApiKeyCredentialId(e.target.value)}
-            placeholder="anthropic-api-key"
+            onChange={setApiKeyCredentialId}
           />
           <span className="form-hint">
             Reference to a credential in your credential store
@@ -224,42 +244,66 @@ export function CreateProviderPage() {
             </div>
           )}
           {models.length > 0 && (
-            <table className="agent-table" style={{ marginBottom: "0.75rem" }}>
-              <thead>
-                <tr>
-                  <th>Model ID</th>
-                  <th>Display Name</th>
-                  <th>Enabled</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {models.map((model, index) => (
-                  <tr key={index}>
-                    <td>
-                      <code>{model.model_id}</code>
-                    </td>
-                    <td>{model.display_name}</td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={model.is_enabled}
-                        onChange={() => toggleModel(index)}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => removeModel(index)}
-                      >
-                        Remove
-                      </button>
-                    </td>
+            <>
+              <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() =>
+                    setModels((prev) => prev.map((m) => ({ ...m, is_enabled: true })))
+                  }
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() =>
+                    setModels((prev) => prev.map((m) => ({ ...m, is_enabled: false })))
+                  }
+                >
+                  Select None
+                </button>
+              </div>
+              <table className="agent-table" style={{ marginBottom: "0.75rem" }}>
+                <thead>
+                  <tr>
+                    <th>Model ID</th>
+                    <th>Display Name</th>
+                    <th>Enabled</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {[...models]
+                    .sort((a, b) => a.model_id.localeCompare(b.model_id))
+                    .map((model) => (
+                      <tr key={model.model_id}>
+                        <td>
+                          <code>{model.model_id}</code>
+                        </td>
+                        <td>{model.display_name}</td>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={model.is_enabled}
+                            onChange={() => toggleModel(model.model_id)}
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => removeModel(model.model_id)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </>
           )}
           <div className="form-row">
             <div className="form-group">
