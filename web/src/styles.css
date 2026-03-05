@@ -286,6 +286,15 @@ body {
   color: var(--color-text-secondary);
 }
 
+.form-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 .form-actions {
   display: flex;
   gap: 0.75rem;
