@@ -9,6 +9,7 @@ import { ProviderDetailPage } from "./pages/ProviderDetailPage";
 import { CredentialListPage } from "./pages/CredentialListPage";
 import { CreateCredentialPage } from "./pages/CreateCredentialPage";
 import { CredentialDetailPage } from "./pages/CredentialDetailPage";
+import { ChatPage } from "./pages/ChatPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 
 export function App() {
@@ -17,6 +18,7 @@ export function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<AgentListPage />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="agents/new" element={<CreateAgentPage />} />
           <Route path="agents/:id" element={<AgentDetailPage />} />
           <Route path="providers" element={<ProviderListPage />} />

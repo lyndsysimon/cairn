@@ -2,7 +2,11 @@ import type {
   Agent,
   AgentListResponse,
   AgentRun,
+  Conversation,
+  ConversationDetail,
+  ConversationListResponse,
   CreateAgentRequest,
+  CreateConversationRequest,
   CreateCredentialRequest,
   CreateProviderRequest,
   CreateRunRequest,
@@ -10,6 +14,7 @@ import type {
   CredentialListResponse,
   DiscoverModelsRequest,
   DiscoverModelsResponse,
+  Message,
   ModelProvider,
   ProviderListResponse,
   RunListResponse,
@@ -177,4 +182,41 @@ export function createRun(
     method: "POST",
     body: JSON.stringify(data),
   });
+}
+
+// --- Conversations ---
+
+export function listConversations(
+  orchestratorAgentId: string,
+): Promise<ConversationListResponse> {
+  return request(
+    `/conversations?orchestrator_agent_id=${encodeURIComponent(orchestratorAgentId)}`,
+  );
+}
+
+export function getConversation(id: string): Promise<ConversationDetail> {
+  return request(`/conversations/${id}`);
+}
+
+export function createConversation(
+  data: CreateConversationRequest,
+): Promise<Conversation> {
+  return request("/conversations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function sendMessage(
+  conversationId: string,
+  text: string,
+): Promise<Message> {
+  return request(`/conversations/${conversationId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function deleteConversation(id: string): Promise<void> {
+  return request(`/conversations/${id}`, { method: "DELETE" });
 }
