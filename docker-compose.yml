@@ -25,6 +25,7 @@ services:
     environment:
       CAIRN_DATABASE_URL: postgresql://cairn:cairn@db:5432/cairn
       CAIRN_DEBUG: "true"
+      CAIRN_ENCRYPTION_KEY: ${CAIRN_ENCRYPTION_KEY}
     volumes:
       - ./src:/app/src
       - ./alembic.ini:/app/alembic.ini
