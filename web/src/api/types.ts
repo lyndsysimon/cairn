@@ -52,6 +52,8 @@ export interface Agent {
   trigger: TriggerConfig;
   runtime: RuntimeConfig;
   credentials: CredentialReference[];
+  security_middlewares: string[];
+  is_orchestrator: boolean;
   status: AgentStatus;
   created_at: string;
   updated_at: string;
@@ -196,4 +198,57 @@ export interface RunListResponse {
 
 export interface CreateRunRequest {
   input_data?: Record<string, unknown> | null;
+}
+
+// --- Conversation types ---
+
+export interface ToolCallInfo {
+  id: string;
+  agent_name: string;
+  input_data: Record<string, unknown>;
+}
+
+export interface ToolResultInfo {
+  tool_call_id: string;
+  agent_name: string;
+  output_data: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export type MessageRole = "user" | "assistant" | "tool_use" | "tool_result";
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  role: MessageRole;
+  content: string;
+  tool_calls: ToolCallInfo[] | null;
+  tool_result: ToolResultInfo | null;
+  created_at: string;
+}
+
+export interface Conversation {
+  id: string;
+  orchestrator_agent_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationDetail extends Conversation {
+  messages: Message[];
+}
+
+export interface ConversationListResponse {
+  conversations: Conversation[];
+  total: number;
+}
+
+export interface CreateConversationRequest {
+  orchestrator_agent_id: string;
+  title: string;
+}
+
+export interface SendMessageRequest {
+  text: string;
 }

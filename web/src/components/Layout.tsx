@@ -9,6 +9,14 @@ export function Layout() {
         </NavLink>
         <nav className="sidebar-nav">
           <NavLink
+            to="/chat"
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+          >
+            Chat
+          </NavLink>
+          <NavLink
             to="/"
             end
             className={({ isActive }) =>
