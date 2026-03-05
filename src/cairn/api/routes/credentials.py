@@ -10,9 +10,21 @@ from cairn.api.schemas import (
     CredentialResponse,
     UpdateCredentialRequest,
 )
+from cairn.config import settings
 from cairn.db.repositories import credential_repo
 
 router = APIRouter()
+
+
+def _require_encryption_key() -> None:
+    if not settings.encryption_key:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Credential storage is not configured. "
+                "Set the CAIRN_ENCRYPTION_KEY environment variable to enable it."
+            ),
+        )
 
 
 @router.post("/credentials", status_code=201)
@@ -20,6 +32,7 @@ async def create_credential(
     body: CreateCredentialRequest,
     conn: AsyncConnection = Depends(get_db_connection),
 ) -> CredentialResponse:
+    _require_encryption_key()
     existing = await credential_repo.get_by_credential_id(conn, body.credential_id)
     if existing is not None:
         raise HTTPException(
@@ -62,6 +75,7 @@ async def update_credential(
     body: UpdateCredentialRequest,
     conn: AsyncConnection = Depends(get_db_connection),
 ) -> CredentialResponse:
+    _require_encryption_key()
     row = await credential_repo.get_by_id(conn, credential_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Credential not found")
