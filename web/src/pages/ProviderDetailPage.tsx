@@ -7,6 +7,7 @@ import {
   discoverProviderModels,
 } from "../api/client";
 import type { ModelProvider, ModelConfig } from "../api/types";
+import { CredentialSelect } from "../components/CredentialSelect";
 
 export function ProviderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -80,14 +81,14 @@ export function ProviderDetailPage() {
     setNewModelDisplayName("");
   }
 
-  function removeModel(index: number) {
-    setEditModels((prev) => prev.filter((_, i) => i !== index));
+  function removeModel(modelId: string) {
+    setEditModels((prev) => prev.filter((m) => m.model_id !== modelId));
   }
 
-  function toggleModel(index: number) {
+  function toggleModel(modelId: string) {
     setEditModels((prev) =>
-      prev.map((m, i) =>
-        i === index ? { ...m, is_enabled: !m.is_enabled } : m,
+      prev.map((m) =>
+        m.model_id === modelId ? { ...m, is_enabled: !m.is_enabled } : m,
       ),
     );
   }
@@ -186,10 +187,9 @@ export function ProviderDetailPage() {
           </div>
           <div className="form-group">
             <label className="form-label">API Key Credential ID</label>
-            <input
-              className="form-input"
+            <CredentialSelect
               value={editApiKeyCredentialId}
-              onChange={(e) => setEditApiKeyCredentialId(e.target.value)}
+              onChange={setEditApiKeyCredentialId}
             />
           </div>
           <div className="form-group">
@@ -222,45 +222,73 @@ export function ProviderDetailPage() {
               </div>
             )}
             {editModels.length > 0 && (
-              <table
-                className="agent-table"
-                style={{ marginBottom: "0.75rem" }}
-              >
-                <thead>
-                  <tr>
-                    <th>Model ID</th>
-                    <th>Display Name</th>
-                    <th>Enabled</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {editModels.map((model, index) => (
-                    <tr key={index}>
-                      <td>
-                        <code>{model.model_id}</code>
-                      </td>
-                      <td>{model.display_name}</td>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={model.is_enabled}
-                          onChange={() => toggleModel(index)}
-                        />
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => removeModel(index)}
-                        >
-                          Remove
-                        </button>
-                      </td>
+              <>
+                <div style={{ marginBottom: "0.5rem", display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() =>
+                      setEditModels((prev) =>
+                        prev.map((m) => ({ ...m, is_enabled: true })),
+                      )
+                    }
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() =>
+                      setEditModels((prev) =>
+                        prev.map((m) => ({ ...m, is_enabled: false })),
+                      )
+                    }
+                  >
+                    Select None
+                  </button>
+                </div>
+                <table
+                  className="agent-table"
+                  style={{ marginBottom: "0.75rem" }}
+                >
+                  <thead>
+                    <tr>
+                      <th>Model ID</th>
+                      <th>Display Name</th>
+                      <th>Enabled</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {[...editModels]
+                      .sort((a, b) => a.model_id.localeCompare(b.model_id))
+                      .map((model) => (
+                        <tr key={model.model_id}>
+                          <td>
+                            <code>{model.model_id}</code>
+                          </td>
+                          <td>{model.display_name}</td>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={model.is_enabled}
+                              onChange={() => toggleModel(model.model_id)}
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => removeModel(model.model_id)}
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </>
             )}
             <div className="form-row">
               <div className="form-group">
