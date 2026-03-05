@@ -44,6 +44,7 @@ export function CreateAgentPage() {
   const [modelProvider, setModelProvider] = useState("");
   const [modelName, setModelName] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
+  const [isOrchestrator, setIsOrchestrator] = useState(false);
 
   // Trigger
   const [triggerType, setTriggerType] = useState<TriggerType>("manual");
@@ -139,6 +140,7 @@ export function CreateAgentPage() {
             credential_id: c.credential_id,
             env_var_name: c.env_var_name,
           })),
+        is_orchestrator: isOrchestrator,
       };
 
       const agent = await createAgent(data);
@@ -258,6 +260,21 @@ export function CreateAgentPage() {
             rows={3}
             placeholder="You are a helpful assistant."
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-checkbox-label">
+            <input
+              type="checkbox"
+              checked={isOrchestrator}
+              onChange={(e) => setIsOrchestrator(e.target.checked)}
+            />
+            Orchestrator agent
+          </label>
+          <span className="form-hint">
+            Orchestrator agents delegate work to other agents via tool calls
+            and are accessible from the Chat page.
+          </span>
         </div>
 
         {/* Trigger */}

@@ -75,6 +75,7 @@ export interface CreateAgentRequest {
   trigger: TriggerConfig;
   runtime: Partial<RuntimeConfig> & { type: RuntimeType };
   credentials?: CredentialReference[];
+  is_orchestrator?: boolean;
 }
 
 export interface UpdateAgentRequest {
@@ -88,6 +89,7 @@ export interface UpdateAgentRequest {
   trigger?: TriggerConfig;
   runtime?: Partial<RuntimeConfig> & { type: RuntimeType };
   credentials?: CredentialReference[];
+  is_orchestrator?: boolean;
   status?: AgentStatus;
 }
 

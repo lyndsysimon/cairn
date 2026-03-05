@@ -71,6 +71,7 @@ export function AgentDetailPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editSystemPrompt, setEditSystemPrompt] = useState("");
   const [editStatus, setEditStatus] = useState<AgentStatus>("active");
+  const [editIsOrchestrator, setEditIsOrchestrator] = useState(false);
   const [editModelProvider, setEditModelProvider] = useState("");
   const [editModelName, setEditModelName] = useState("");
   const [editTriggerType, setEditTriggerType] =
@@ -136,6 +137,7 @@ export function AgentDetailPage() {
     setEditDescription(a.description);
     setEditSystemPrompt(a.system_prompt);
     setEditStatus(a.status);
+    setEditIsOrchestrator(a.is_orchestrator);
     setEditModelProvider(a.model_provider);
     setEditModelName(a.model_name);
     setEditTriggerType(a.trigger.type);
@@ -251,6 +253,7 @@ export function AgentDetailPage() {
         description: editDescription,
         system_prompt: editSystemPrompt,
         status: editStatus,
+        is_orchestrator: editIsOrchestrator,
         model_provider: editModelProvider,
         model_name: editModelName,
         trigger,
@@ -470,6 +473,21 @@ export function AgentDetailPage() {
               onChange={(e) => setEditSystemPrompt(e.target.value)}
               rows={4}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-checkbox-label">
+              <input
+                type="checkbox"
+                checked={editIsOrchestrator}
+                onChange={(e) => setEditIsOrchestrator(e.target.checked)}
+              />
+              Orchestrator agent
+            </label>
+            <span className="form-hint">
+              Orchestrator agents delegate work to other agents via tool calls
+              and are accessible from the Chat page.
+            </span>
           </div>
 
           {/* Trigger */}
@@ -796,6 +814,10 @@ export function AgentDetailPage() {
                 >
                   {agent.status}
                 </span>
+              </span>
+              <span className="detail-label">Type</span>
+              <span className="detail-value">
+                {agent.is_orchestrator ? "Orchestrator" : "Sub-agent"}
               </span>
               <span className="detail-label">Description</span>
               <span className="detail-value">
