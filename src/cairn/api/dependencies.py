@@ -56,7 +56,7 @@ async def _llm_client_factory(provider_name: str, conn: AsyncConnection) -> LLMC
     resolves the key, and returns the appropriate client.
     """
     providers = await provider_repo.list_all(conn, enabled_only=True)
-    provider = next((p for p in providers if p.name == provider_name), None)
+    provider = next((p for p in providers if p.provider_type == provider_name), None)
     if provider is None:
         raise ValueError(f"Model provider {provider_name!r} not found or not enabled")
 
