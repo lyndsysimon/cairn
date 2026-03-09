@@ -29,7 +29,7 @@ from cairn.models.conversation import (
     ToolCall,
     ToolResult,
 )
-from cairn.orchestration.tools import AgentToolRegistry
+from cairn.orchestration.tools import AgentToolRegistry, ToolTarget
 from cairn.security.base import SecurityPipeline
 
 logger = logging.getLogger(__name__)
@@ -130,8 +130,10 @@ class OrchestrationService:
         # Load full conversation history
         history = await message_repo.list_by_conversation(conn, conversation_id)
 
-        # Build tool definitions from available sub-agents
-        tools, agent_map = await self._tool_registry.get_tool_definitions(conn)
+        # Build tool definitions from available sub-agents and built-in tools
+        tools, tool_map = await self._tool_registry.get_tool_definitions(
+            conn, orchestrator_agent_id=agent.id
+        )
 
         # Get LLM client
         llm_client = await self._get_llm_client(agent, conn)
@@ -146,7 +148,7 @@ class OrchestrationService:
             conversation_id=conversation_id,
             chat_messages=chat_messages,
             tools=tools,
-            agent_map=agent_map,
+            tool_map=tool_map,
             llm_client=llm_client,
             pipeline=pipeline,
             credential_values=credential_values,
@@ -166,12 +168,15 @@ class OrchestrationService:
         conversation_id: UUID,
         chat_messages: list[ChatMessage],
         tools: list[ToolDefinition],
-        agent_map: dict[str, AgentDefinition],
+        tool_map: dict[str, ToolTarget],
         llm_client: LLMClient,
         pipeline: SecurityPipeline,
         credential_values: list[str],
     ) -> Message:
         """Call the LLM in a loop until it produces a final text response."""
+        # Build system prompt once — tool list is stable across rounds.
+        system_prompt = _build_system_prompt(agent.system_prompt, tools)
+
         for round_num in range(_MAX_TOOL_ROUNDS):
             logger.debug(
                 "Orchestration loop round %d for conversation %s",
@@ -188,7 +193,7 @@ class OrchestrationService:
             # Call the LLM
             response: LLMResponse = await llm_client.complete(
                 model=agent.model_name,
-                system=agent.system_prompt,
+                system=system_prompt,
                 messages=chat_messages,
                 tools=tools if tools else None,
             )
@@ -245,7 +250,7 @@ class OrchestrationService:
             # Execute each tool call and collect results
             tool_result_blocks: list[dict] = []
             for tc in response.tool_calls:
-                result = await self._tool_registry.execute_tool_call(tc, agent_map, conn)
+                result = await self._tool_registry.execute_tool_call(tc, tool_map, conn)
 
                 # Security: inspect inbound tool result
                 result_str = json.dumps(result)
@@ -313,6 +318,32 @@ class OrchestrationService:
             cred = await self._credential_store.get_credential(ref)
             values.append(cred.value)
         return values
+
+
+def _build_system_prompt(base_prompt: str, tools: list[ToolDefinition]) -> str:
+    """Augment the agent's system prompt with available tool descriptions.
+
+    Appends a section listing each tool by name and description so the LLM
+    knows what capabilities it has.  Returns the base prompt unchanged when
+    there are no tools.
+    """
+    if not tools:
+        return base_prompt
+
+    lines = ["You have access to the following tools:"]
+    for tool in tools:
+        lines.append(f"- **{tool.name}**: {tool.description}")
+    lines.append("")
+    lines.append(
+        "Use these tools when appropriate to fulfill user requests. "
+        "Do not tell the user you lack capabilities that these tools provide."
+    )
+
+    tool_section = "\n".join(lines)
+
+    if base_prompt:
+        return f"{base_prompt}\n\n{tool_section}"
+    return tool_section
 
 
 def _messages_to_chat(messages: list[Message]) -> list[ChatMessage]:

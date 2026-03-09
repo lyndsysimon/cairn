@@ -1,25 +1,37 @@
 """Tool framework for the orchestration agent.
 
-Converts sub-agent definitions into LLM tool definitions and executes
-tool calls by delegating to the ExecutionService.
+Converts sub-agent definitions and built-in tools into LLM tool definitions,
+and executes tool calls by delegating to the appropriate executor.
 """
 
 import logging
+from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg import AsyncConnection
 
-from cairn.db.repositories import agent_repo, run_repo
+from cairn.db.repositories import agent_repo, run_repo, tool_repo
 from cairn.execution.service import ExecutionService
 from cairn.llm.base import LLMToolCall, ToolDefinition
 from cairn.models.agent import AgentDefinition, AgentStatus
 from cairn.models.run import AgentRun, RunStatus
+from cairn.models.tool import ToolDefinition as DBToolDefinition
+from cairn.orchestration.builtin_tools import BUILTIN_EXECUTORS
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ToolTarget:
+    """Identifies what a tool name resolves to for execution."""
+
+    kind: str  # "agent" | "builtin"
+    agent: AgentDefinition | None = None
+    builtin_tool: DBToolDefinition | None = None
+
+
 class AgentToolRegistry:
-    """Builds LLM tool definitions from available sub-agents and executes tool calls."""
+    """Builds LLM tool definitions from available sub-agents and built-in tools."""
 
     def __init__(self, execution_service: ExecutionService) -> None:
         self._execution_service = execution_service
@@ -28,13 +40,16 @@ class AgentToolRegistry:
         self,
         conn: AsyncConnection,
         *,
+        orchestrator_agent_id: UUID | None = None,
         agent_ids: list[UUID] | None = None,
-    ) -> tuple[list[ToolDefinition], dict[str, AgentDefinition]]:
-        """Load active sub-agents and return their tool definitions.
+    ) -> tuple[list[ToolDefinition], dict[str, ToolTarget]]:
+        """Load active sub-agents and built-in tools, returning their tool definitions.
 
-        Returns a tuple of (tool definitions for the LLM, name-to-agent mapping).
+        Returns a tuple of (tool definitions for the LLM, name-to-target mapping).
         If agent_ids is provided, only those agents are included; otherwise
         all active non-orchestrator agents are used.
+        If orchestrator_agent_id is provided, built-in tools assigned to that
+        agent are also included.
         """
         agents = await agent_repo.list_all(conn, status=AgentStatus.ACTIVE, limit=200)
         # Filter to non-orchestrator agents
@@ -44,8 +59,8 @@ class AgentToolRegistry:
             id_set = set(agent_ids)
             agents = [a for a in agents if a.id in id_set]
 
-        tools = []
-        agent_map: dict[str, AgentDefinition] = {}
+        tools: list[ToolDefinition] = []
+        tool_map: dict[str, ToolTarget] = {}
         for agent in agents:
             tool_name = _agent_name_to_tool_name(agent.name)
             tools.append(
@@ -55,21 +70,56 @@ class AgentToolRegistry:
                     input_schema=agent.input_schema,
                 )
             )
-            agent_map[tool_name] = agent
+            tool_map[tool_name] = ToolTarget(kind="agent", agent=agent)
 
-        return tools, agent_map
+        # Load built-in tools assigned to the orchestrator
+        if orchestrator_agent_id is not None:
+            agent_tools = await tool_repo.get_tools_for_agent(conn, orchestrator_agent_id)
+            for db_tool in agent_tools:
+                if not db_tool.is_enabled:
+                    continue
+                if db_tool.name not in BUILTIN_EXECUTORS:
+                    continue
+                if db_tool.name in tool_map:
+                    logger.warning(
+                        "Built-in tool %r skipped: name conflicts with a sub-agent tool",
+                        db_tool.name,
+                    )
+                    continue
+                tools.append(
+                    ToolDefinition(
+                        name=db_tool.name,
+                        description=db_tool.description,
+                        input_schema=db_tool.parameters_schema,
+                    )
+                )
+                tool_map[db_tool.name] = ToolTarget(kind="builtin", builtin_tool=db_tool)
+
+        return tools, tool_map
 
     async def execute_tool_call(
         self,
         tool_call: LLMToolCall,
-        agent_map: dict[str, AgentDefinition],
+        tool_map: dict[str, ToolTarget],
         conn: AsyncConnection,
     ) -> dict:
-        """Execute a tool call by running the corresponding sub-agent.
+        """Execute a tool call by dispatching to the appropriate executor.
 
-        Returns the agent's output_data dict, or an error dict on failure.
+        Returns the tool's output dict, or an error dict on failure.
         """
-        agent = agent_map.get(tool_call.name)
+        target = tool_map.get(tool_call.name)
+        if target is None:
+            return {"error": f"Unknown tool: {tool_call.name}"}
+
+        if target.kind == "builtin":
+            executor = BUILTIN_EXECUTORS.get(tool_call.name)
+            if executor is None:
+                return {"error": f"No executor for built-in tool: {tool_call.name}"}
+            logger.info("Executing built-in tool %s (call %s)", tool_call.name, tool_call.id)
+            return await executor.execute(tool_call.input_data)
+
+        # Sub-agent execution
+        agent = target.agent
         if agent is None:
             return {"error": f"Unknown tool: {tool_call.name}"}
 
