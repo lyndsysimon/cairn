@@ -34,6 +34,8 @@ class AgentDefinition(BaseModel):
 
     is_orchestrator: bool = False
 
+    tool_ids: list[UUID] = Field(default_factory=list)
+
     status: AgentStatus = AgentStatus.ACTIVE
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

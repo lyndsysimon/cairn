@@ -10,6 +10,7 @@ import type {
   CreateCredentialRequest,
   CreateProviderRequest,
   CreateRunRequest,
+  CreateToolRequest,
   Credential,
   CredentialListResponse,
   DiscoverModelsRequest,
@@ -18,9 +19,12 @@ import type {
   ModelProvider,
   ProviderListResponse,
   RunListResponse,
+  Tool,
+  ToolListResponse,
   UpdateAgentRequest,
   UpdateCredentialRequest,
   UpdateProviderRequest,
+  UpdateToolRequest,
 } from "./types";
 
 const BASE = "/api";
@@ -219,4 +223,38 @@ export function sendMessage(
 
 export function deleteConversation(id: string): Promise<void> {
   return request(`/conversations/${id}`, { method: "DELETE" });
+}
+
+// --- Tools ---
+
+export function listTools(
+  enabledOnly?: boolean,
+): Promise<ToolListResponse> {
+  const params = enabledOnly ? "?enabled_only=true" : "";
+  return request(`/tools${params}`);
+}
+
+export function getTool(id: string): Promise<Tool> {
+  return request(`/tools/${id}`);
+}
+
+export function createTool(data: CreateToolRequest): Promise<Tool> {
+  return request("/tools", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateTool(
+  id: string,
+  data: UpdateToolRequest,
+): Promise<Tool> {
+  return request(`/tools/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteTool(id: string): Promise<void> {
+  return request(`/tools/${id}`, { method: "DELETE" });
 }

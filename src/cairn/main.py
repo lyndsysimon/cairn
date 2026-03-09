@@ -11,6 +11,7 @@ from cairn.api.routes import (
     health,
     providers,
     runs,
+    tools,
     webhooks,
 )
 from cairn.config import settings
@@ -42,5 +43,6 @@ app.include_router(agents.router, prefix="/api")
 app.include_router(providers.router, prefix="/api")
 app.include_router(credentials.router, prefix="/api")
 app.include_router(runs.router, prefix="/api")
+app.include_router(tools.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(conversations.router, prefix="/api")

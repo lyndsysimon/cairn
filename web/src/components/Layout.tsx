@@ -41,6 +41,14 @@ export function Layout() {
           >
             Credentials
           </NavLink>
+          <NavLink
+            to="/tools"
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+          >
+            Tools
+          </NavLink>
         </nav>
       </aside>
       <main className="main">

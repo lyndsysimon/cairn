@@ -23,6 +23,7 @@ class CreateAgentRequest(BaseModel):
     credentials: list[CredentialReference] = Field(default_factory=list)
     security_middlewares: list[str] = Field(default_factory=list)
     is_orchestrator: bool = False
+    tool_ids: list[UUID] = Field(default_factory=list)
 
 
 class UpdateAgentRequest(BaseModel):
@@ -39,6 +40,7 @@ class UpdateAgentRequest(BaseModel):
     security_middlewares: list[str] | None = None
     is_orchestrator: bool | None = None
     status: AgentStatus | None = None
+    tool_ids: list[UUID] | None = None
 
 
 class AgentResponse(BaseModel):
@@ -55,6 +57,7 @@ class AgentResponse(BaseModel):
     credentials: list[CredentialReference]
     security_middlewares: list[str]
     is_orchestrator: bool
+    tool_ids: list[UUID]
     status: AgentStatus
     created_at: datetime
     updated_at: datetime
@@ -225,4 +228,42 @@ class ConversationDetailResponse(BaseModel):
 
 class ConversationListResponse(BaseModel):
     conversations: list[ConversationResponse]
+    total: int
+
+
+# --- Tool schemas ---
+
+
+class CreateToolRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    display_name: str = Field(min_length=1, max_length=255)
+    description: str = ""
+    is_enabled: bool = True
+    is_sandbox_safe: bool = True
+    parameters_schema: dict = Field(default_factory=dict)
+
+
+class UpdateToolRequest(BaseModel):
+    display_name: str | None = None
+    description: str | None = None
+    is_enabled: bool | None = None
+    is_sandbox_safe: bool | None = None
+    parameters_schema: dict | None = None
+
+
+class ToolResponse(BaseModel):
+    id: UUID
+    name: str
+    display_name: str
+    description: str
+    is_enabled: bool
+    is_builtin: bool
+    is_sandbox_safe: bool
+    parameters_schema: dict
+    created_at: datetime
+    updated_at: datetime
+
+
+class ToolListResponse(BaseModel):
+    tools: list[ToolResponse]
     total: int
