@@ -10,7 +10,12 @@ from cairn.models.agent import AgentDefinition
 from cairn.models.conversation import Conversation, Message, MessageRole
 from cairn.models.runtime import RuntimeConfig, RuntimeType
 from cairn.models.trigger import ManualTrigger
-from cairn.orchestration.service import OrchestrationService, _messages_to_chat
+from cairn.orchestration.service import (
+    OrchestrationService,
+    _build_system_prompt,
+    _messages_to_chat,
+)
+from cairn.orchestration.tools import ToolTarget
 
 
 def _make_orchestrator() -> AgentDefinition:
@@ -235,7 +240,10 @@ class TestSendMessageWithToolCalls:
         )
         tool_registry = AsyncMock()
         tool_registry.get_tool_definitions = AsyncMock(
-            return_value=([tool_def], {"weather": sub_agent})
+            return_value=(
+                [tool_def],
+                {"weather": ToolTarget(kind="agent", agent=sub_agent)},
+            )
         )
         tool_registry.execute_tool_call = AsyncMock(
             return_value={"temperature": 15, "condition": "cloudy"}
@@ -376,7 +384,10 @@ class TestMaxToolRounds:
         tool_def = ToolDefinition(name="agent-a", description="Agent A", input_schema={})
         tool_registry = AsyncMock()
         tool_registry.get_tool_definitions = AsyncMock(
-            return_value=([tool_def], {"agent-a": sub_agent})
+            return_value=(
+                [tool_def],
+                {"agent-a": ToolTarget(kind="agent", agent=sub_agent)},
+            )
         )
         tool_registry.execute_tool_call = AsyncMock(return_value={"status": "ok"})
 
@@ -508,3 +519,40 @@ class TestMessagesToChat:
         assert len(chat[2].content) == 2
         assert chat[2].content[0]["tool_use_id"] == "tc_1"
         assert chat[2].content[1]["tool_use_id"] == "tc_2"
+
+
+class TestBuildSystemPrompt:
+    def test_no_tools_returns_base_prompt(self):
+        base = "You are a helpful assistant."
+        result = _build_system_prompt(base, [])
+        assert result == base
+
+    def test_tools_appended_to_base_prompt(self):
+        base = "You are a helpful assistant."
+        tools = [
+            ToolDefinition(name="bash", description="Run shell commands", input_schema={}),
+            ToolDefinition(name="weather", description="Get weather info", input_schema={}),
+        ]
+        result = _build_system_prompt(base, tools)
+
+        assert result.startswith(base)
+        assert "bash" in result
+        assert "Run shell commands" in result
+        assert "weather" in result
+        assert "Get weather info" in result
+        assert "Do not tell the user you lack capabilities" in result
+
+    def test_empty_base_prompt_with_tools(self):
+        tools = [
+            ToolDefinition(name="bash", description="Run shell commands", input_schema={}),
+        ]
+        result = _build_system_prompt("", tools)
+
+        assert "bash" in result
+        assert "Run shell commands" in result
+        # Should not start with a blank line / double newline
+        assert not result.startswith("\n")
+
+    def test_empty_base_prompt_no_tools(self):
+        result = _build_system_prompt("", [])
+        assert result == ""
