@@ -5,6 +5,7 @@ import {
   listProviders,
   listCredentials,
   listAgents,
+  listTools,
 } from "../api/client";
 import type {
   Agent,
@@ -12,6 +13,7 @@ import type {
   Credential,
   ModelProvider,
   RuntimeType,
+  Tool,
   TriggerType,
 } from "../api/types";
 
@@ -38,6 +40,7 @@ export function CreateAgentPage() {
     Credential[]
   >([]);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
+  const [availableTools, setAvailableTools] = useState<Tool[]>([]);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -71,6 +74,9 @@ export function CreateAgentPage() {
     { credential_id: string; env_var_name: string }[]
   >([]);
 
+  // Tools
+  const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
+
   useEffect(() => {
     listProviders(true)
       .then((data) => setProviders(data.providers))
@@ -80,6 +86,9 @@ export function CreateAgentPage() {
       .catch(() => {});
     listAgents()
       .then((data) => setAvailableAgents(data.agents))
+      .catch(() => {});
+    listTools(true)
+      .then((data) => setAvailableTools(data.tools))
       .catch(() => {});
   }, []);
 
@@ -141,6 +150,7 @@ export function CreateAgentPage() {
             env_var_name: c.env_var_name,
           })),
         is_orchestrator: isOrchestrator,
+        tool_ids: selectedToolIds,
       };
 
       const agent = await createAgent(data);
@@ -537,6 +547,50 @@ export function CreateAgentPage() {
           </button>
           <span className="form-hint">
             Map credentials to environment variables in the agent runtime
+          </span>
+        </div>
+
+        {/* Tools */}
+        <div className="form-group">
+          <label className="form-label">Tools</label>
+          {availableTools.length > 0 ? (
+            <>
+              {availableTools.map((tool) => (
+                <label
+                  key={tool.id}
+                  className="form-checkbox-label"
+                  style={{ display: "block", marginBottom: "0.25rem" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedToolIds.includes(tool.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedToolIds((prev) => [...prev, tool.id]);
+                      } else {
+                        setSelectedToolIds((prev) =>
+                          prev.filter((id) => id !== tool.id),
+                        );
+                      }
+                    }}
+                  />
+                  {tool.display_name}
+                  {!tool.is_sandbox_safe && (
+                    <span
+                      className="status status-error"
+                      style={{ marginLeft: "0.5rem", fontSize: "0.75rem" }}
+                    >
+                      external
+                    </span>
+                  )}
+                </label>
+              ))}
+            </>
+          ) : (
+            <span className="form-hint">No tools available.</span>
+          )}
+          <span className="form-hint">
+            Select tools this agent can use during execution
           </span>
         </div>
 

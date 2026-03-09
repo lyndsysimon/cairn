@@ -9,6 +9,7 @@ import {
   listProviders,
   listCredentials,
   listAgents,
+  listTools,
 } from "../api/client";
 import type {
   Agent,
@@ -18,6 +19,7 @@ import type {
   ModelProvider,
   RunStatus,
   RuntimeType,
+  Tool,
   TriggerType,
 } from "../api/types";
 
@@ -97,6 +99,7 @@ export function AgentDetailPage() {
   const [editCredentials, setEditCredentials] = useState<
     { credential_id: string; env_var_name: string }[]
   >([]);
+  const [editToolIds, setEditToolIds] = useState<string[]>([]);
 
   // Reference data for edit mode
   const [providers, setProviders] = useState<ModelProvider[]>([]);
@@ -104,6 +107,7 @@ export function AgentDetailPage() {
     Credential[]
   >([]);
   const [availableAgents, setAvailableAgents] = useState<Agent[]>([]);
+  const [availableTools, setAvailableTools] = useState<Tool[]>([]);
 
   // Runs
   const [runs, setRuns] = useState<AgentRun[]>([]);
@@ -171,6 +175,7 @@ export function AgentDetailPage() {
         env_var_name: c.env_var_name,
       })),
     );
+    setEditToolIds(a.tool_ids || []);
   }
 
   function startEditing() {
@@ -186,6 +191,9 @@ export function AgentDetailPage() {
       .then((data) =>
         setAvailableAgents(data.agents.filter((a) => a.id !== id)),
       )
+      .catch(() => {});
+    listTools(true)
+      .then((data) => setAvailableTools(data.tools))
       .catch(() => {});
     setEditing(true);
   }
@@ -273,6 +281,7 @@ export function AgentDetailPage() {
             credential_id: c.credential_id,
             env_var_name: c.env_var_name,
           })),
+        tool_ids: editToolIds,
       });
       setAgent(updated);
       setEditing(false);
@@ -769,6 +778,53 @@ export function AgentDetailPage() {
             </span>
           </div>
 
+          {/* Tools */}
+          <div className="form-group">
+            <label className="form-label">Tools</label>
+            {availableTools.length > 0 ? (
+              <>
+                {availableTools.map((tool) => (
+                  <label
+                    key={tool.id}
+                    className="form-checkbox-label"
+                    style={{ display: "block", marginBottom: "0.25rem" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editToolIds.includes(tool.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditToolIds((prev) => [...prev, tool.id]);
+                        } else {
+                          setEditToolIds((prev) =>
+                            prev.filter((tid) => tid !== tool.id),
+                          );
+                        }
+                      }}
+                    />
+                    {tool.display_name}
+                    {!tool.is_sandbox_safe && (
+                      <span
+                        className="status status-error"
+                        style={{
+                          marginLeft: "0.5rem",
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        external
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </>
+            ) : (
+              <span className="form-hint">No tools available.</span>
+            )}
+            <span className="form-hint">
+              Select tools this agent can use during execution
+            </span>
+          </div>
+
           {/* Schemas */}
           <div className="form-group">
             <label className="form-label">Input Schema (JSON)</label>
@@ -977,6 +1033,15 @@ export function AgentDetailPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {agent.tool_ids && agent.tool_ids.length > 0 && (
+            <div className="detail-section">
+              <h2>Tools</h2>
+              <p style={{ color: "var(--color-text-secondary)", fontSize: "0.875rem" }}>
+                {agent.tool_ids.length} tool{agent.tool_ids.length !== 1 ? "s" : ""} assigned
+              </p>
             </div>
           )}
 

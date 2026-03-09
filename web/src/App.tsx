@@ -9,6 +9,9 @@ import { ProviderDetailPage } from "./pages/ProviderDetailPage";
 import { CredentialListPage } from "./pages/CredentialListPage";
 import { CreateCredentialPage } from "./pages/CreateCredentialPage";
 import { CredentialDetailPage } from "./pages/CredentialDetailPage";
+import { ToolListPage } from "./pages/ToolListPage";
+import { CreateToolPage } from "./pages/CreateToolPage";
+import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ChatPage } from "./pages/ChatPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 
@@ -27,6 +30,9 @@ export function App() {
           <Route path="credentials" element={<CredentialListPage />} />
           <Route path="credentials/new" element={<CreateCredentialPage />} />
           <Route path="credentials/:id" element={<CredentialDetailPage />} />
+          <Route path="tools" element={<ToolListPage />} />
+          <Route path="tools/new" element={<CreateToolPage />} />
+          <Route path="tools/:id" element={<ToolDetailPage />} />
           <Route path="runs/:runId" element={<RunDetailPage />} />
         </Route>
       </Routes>

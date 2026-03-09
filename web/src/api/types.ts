@@ -54,6 +54,7 @@ export interface Agent {
   credentials: CredentialReference[];
   security_middlewares: string[];
   is_orchestrator: boolean;
+  tool_ids: string[];
   status: AgentStatus;
   created_at: string;
   updated_at: string;
@@ -76,6 +77,7 @@ export interface CreateAgentRequest {
   runtime: Partial<RuntimeConfig> & { type: RuntimeType };
   credentials?: CredentialReference[];
   is_orchestrator?: boolean;
+  tool_ids?: string[];
 }
 
 export interface UpdateAgentRequest {
@@ -90,6 +92,7 @@ export interface UpdateAgentRequest {
   runtime?: Partial<RuntimeConfig> & { type: RuntimeType };
   credentials?: CredentialReference[];
   is_orchestrator?: boolean;
+  tool_ids?: string[];
   status?: AgentStatus;
 }
 
@@ -253,4 +256,41 @@ export interface CreateConversationRequest {
 
 export interface SendMessageRequest {
   text: string;
+}
+
+// --- Tool types ---
+
+export interface Tool {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  is_enabled: boolean;
+  is_builtin: boolean;
+  is_sandbox_safe: boolean;
+  parameters_schema: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ToolListResponse {
+  tools: Tool[];
+  total: number;
+}
+
+export interface CreateToolRequest {
+  name: string;
+  display_name: string;
+  description?: string;
+  is_enabled?: boolean;
+  is_sandbox_safe?: boolean;
+  parameters_schema?: Record<string, unknown>;
+}
+
+export interface UpdateToolRequest {
+  display_name?: string;
+  description?: string;
+  is_enabled?: boolean;
+  is_sandbox_safe?: boolean;
+  parameters_schema?: Record<string, unknown>;
 }
